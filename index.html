@@ -46,14 +46,14 @@
       <a class="nav-item" data-s="admin"><span>⚙️</span> Admin</a>
     </nav>
     <div class="px-4 py-3 text-white/60 text-xs border-t border-white/10">Danny Meister · Purchaser</div>
-    <div class="px-4 pb-3 text-white/40 text-[10px] leading-tight" title="Deploy version — if this doesn't match the latest deploy, you're seeing a cached page (hard-refresh: Ctrl+Shift+R)">build <span id="buildStamp"><!--BUILD-->20260702-155407 (c0ca6a0)<!--/BUILD--></span></div>
+    <div class="px-4 pb-3 text-white/40 text-[10px] leading-tight" title="Deploy version — if this doesn't match the latest deploy, you're seeing a cached page (hard-refresh: Ctrl+Shift+R)">build <span id="buildStamp"><!--BUILD-->20260702-160521 (ce8774c)<!--/BUILD--></span></div>
   </aside>
 
   <div class="flex-1 flex flex-col min-w-0">
     <header class="h-14 bg-white border-b border-slate-200 px-5 flex items-center gap-4 flex-shrink-0">
       <div id="pageTitle" class="text-base font-semibold text-slate-800">Dashboard</div>
       <div class="flex-1"></div>
-      <input placeholder="Search…" class="w-56 px-3 py-1.5 text-sm border border-slate-200 rounded-md bg-slate-50">
+      <input placeholder="Search…" disabled title="Global search is spec'd (orders search/filter via the API) but inert in this prototype." class="w-56 px-3 py-1.5 text-sm border border-slate-200 rounded-md bg-slate-50" style="opacity:.55;cursor:not-allowed">
       <label class="text-xs text-slate-400">Brand</label>
       <select id="brandSwitcher" class="text-sm border border-slate-200 rounded-md px-2 py-1.5 bg-white max-w-[200px]"></select>
     </header>
@@ -109,7 +109,7 @@
       <section id="orders" class="screen max-w-[1100px]">
         <div id="ordersList">
           <div class="flex flex-wrap items-center gap-2 mb-3">
-            <input placeholder="Search item, order #, vendor, PO…" class="flex-1 min-w-[200px] text-sm border border-slate-200 rounded-md px-3 py-1.5 bg-slate-50">
+            <input placeholder="Search item, order #, vendor, PO…" disabled title="Search/filter is spec'd (API GET /orders ?q); inert in this prototype." class="flex-1 min-w-[200px] text-sm border border-slate-200 rounded-md px-3 py-1.5 bg-slate-50" style="opacity:.55;cursor:not-allowed">
             <select class="text-sm border border-slate-200 rounded-md px-2 py-1.5 bg-white"><option>Ordered date</option><option>Received date</option></select>
             <input type="date" class="text-sm border border-slate-200 rounded-md px-2 py-1.5 bg-white"><span class="text-slate-400 text-sm">–</span><input type="date" class="text-sm border border-slate-200 rounded-md px-2 py-1.5 bg-white">
             <select class="text-sm border border-slate-200 rounded-md px-2 py-1.5 bg-white"><option>All statuses</option><option>Open</option><option>Submitted</option><option>Partial</option><option>Received</option><option>Stale</option></select>
@@ -133,7 +133,7 @@
         <div class="flex items-center gap-2 mb-4">
           <div class="text-sm text-slate-500">On-hand of record</div>
           <select id="invLoc" onchange="changeLoc(this.value)" class="text-sm border border-slate-200 rounded-md px-2 py-1.5 bg-white"><option>Kahana</option><option>Kihei</option></select>
-          <input placeholder="Search item…" class="flex-1 text-sm border border-slate-200 rounded-md px-3 py-1.5 bg-slate-50">
+          <input placeholder="Search item…" disabled title="Search/filter is spec'd; inert in this prototype." class="flex-1 text-sm border border-slate-200 rounded-md px-3 py-1.5 bg-slate-50" style="opacity:.55;cursor:not-allowed">
           <button class="btn btn-brand brand-bg" onclick="openCount()">📱 Walk &amp; Count</button>
         </div>
         <div class="bg-white border border-slate-200 rounded-xl overflow-hidden"><div id="invTable"></div></div>
