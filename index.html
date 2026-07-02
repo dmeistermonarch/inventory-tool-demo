@@ -46,7 +46,7 @@
       <a class="nav-item" data-s="admin"><span>âš™ï¸</span> Admin</a>
     </nav>
     <div class="px-4 py-3 text-white/60 text-xs border-t border-white/10">Danny Meister Â· Purchaser</div>
-    <div class="px-4 pb-3 text-white/40 text-[10px] leading-tight" title="Deploy version â€” if this doesn't match the latest deploy, you're seeing a cached page (hard-refresh: Ctrl+Shift+R)">build <span id="buildStamp"><!--BUILD-->20260702-132058 (af8367d)<!--/BUILD--></span></div>
+    <div class="px-4 pb-3 text-white/40 text-[10px] leading-tight" title="Deploy version â€” if this doesn't match the latest deploy, you're seeing a cached page (hard-refresh: Ctrl+Shift+R)">build <span id="buildStamp"><!--BUILD-->20260702-134628 (223387e)<!--/BUILD--></span></div>
   </aside>
 
   <div class="flex-1 flex flex-col min-w-0">
@@ -156,17 +156,18 @@
           </div>
 
           <div class="bg-white border border-slate-200 rounded-xl p-5">
-            <div class="flex items-center mb-3"><div class="flex-1"><div class="font-semibold text-slate-800">Vendors</div><div class="text-xs text-slate-500">Lead times drive expected delivery + the stale flag; capacity is shown on the shopping list.</div></div><button class="btn" onclick="addVendor()">ï¼‹ Add vendor</button></div>
+            <div class="flex items-center mb-3"><div class="flex-1"><div class="font-semibold text-slate-800">Vendors <span class="badge bg-sky-100 text-sky-700">this brand</span></div><div class="text-xs text-slate-500">Vendor settings are per-brand â€” even national vendors ship differently by site (Amazon â‰ˆ 2 wks to Hawaii). Lead times drive expected delivery + the stale flag; capacity shows on the shopping list.</div></div><button class="btn" onclick="addVendor()">ï¼‹ Add vendor</button></div>
             <div id="admVendorTable"></div>
           </div>
 
           <div class="bg-white border border-slate-200 rounded-xl p-5">
-            <div class="flex items-center mb-3"><div class="flex-1"><div class="font-semibold text-slate-800">Users &amp; access</div><div class="text-xs text-slate-500">Per-brand role. Google SSO for Monarch staff; external-email accounts supported (Eden Crest). Full access control (RBAC) arrives after first-location rollout â€” auth via Stoic IdP is pending.</div></div></div>
+            <div class="flex items-center mb-3"><div class="flex-1"><div class="font-semibold text-slate-800">Users &amp; access</div><div class="text-xs text-slate-500">One role per user per brand; roles nest â€” <b>Field/HK âŠ‚ Receiver âŠ‚ Purchaser âŠ‚ Site Admin âŠ‚ Monarch Admin</b> (+ read-only FP&amp;A Viewer). Purchaser includes receiving and owns catalog/locks; Site Admin adds people &amp; locations for their brands; Monarch Admin is platform-wide. Google SSO for Monarch staff; external-email supported (Eden Crest). Enforcement lands with Stoic IdP.</div></div><button class="btn btn-brand brand-bg" onclick="openUser(-1)">ï¼‹ Add user</button></div>
+            <div class="text-[11px] text-slate-400 mb-2">Viewing as <b>Monarch Admin</b> â€” all users, all brands. A Site Admin opens this same page and sees only users with access to their brands (and only those access rows).</div>
             <div id="admUserTable"></div>
           </div>
 
           <div class="bg-white border border-slate-200 rounded-xl p-5">
-            <div class="flex items-center mb-3"><div class="flex-1"><div class="font-semibold text-slate-800">Brands</div><div class="text-xs text-slate-500">Each brand gets its own catalog, locations, and theming. Use the switcher (top right) to change context.</div></div></div>
+            <div class="flex items-center mb-3"><div class="flex-1"><div class="font-semibold text-slate-800">Brands</div><div class="text-xs text-slate-500">Each brand gets its own catalog, locations, and theming. Use the switcher (top right) to change context. Adding brands is Monarch Admin only.</div></div><button class="btn" onclick="openAddBrand()">ï¼‹ Add brand</button></div>
             <div id="admBrandTable" style="max-height:420px;overflow:auto"></div>
           </div>
 
@@ -1263,13 +1264,20 @@ const LOCATIONS=[
  {name:'Kahana', type:'warehouse', active:true},
  {name:'Kihei',  type:'warehouse', active:true}
 ];
+// Role ladder (docs/ROLES-PERMISSIONS.md, Danny 7/2): each rung contains the
+// one below (Purchaser includes Receiver); locks/allowlists editable by
+// Purchaser; Site Admin adds people+locations; Monarch Admin adds platform.
+// `access` mirrors user_brand_access: one role per user PER BRAND â€” a user can
+// hold roles at several brands (shared resources). Monarch Admin = all brands.
 const ADMIN_USERS=[
- {name:'Danny Meister',  email:'dmeister@gomonarch.com', auth:'sso',      role:'Admin',     scope:'All brands'},
- {name:'Maddie R.',      email:'m***@gomonarch.com',     auth:'sso',      role:'Purchaser', scope:'My Perfect Stays'},
- {name:'Kahana Receiving',email:'k***@gomonarch.com',    auth:'sso',      role:'Receiver',  scope:'MPS Â· Kahana'},
- {name:'Eden Crest Ops', email:'e***@gmail.com',         auth:'external', role:'Purchaser', scope:'Eden Crest'}
+ {name:'Danny Meister',  email:'dmeister@gomonarch.com', auth:'sso',      monarch:true,  access:[]},
+ {name:'MPS Ops Lead',   email:'o***@gomonarch.com',     auth:'sso',      monarch:false, access:[{brand:'My Perfect Stays',role:'Site Admin'}]},
+ {name:'Maddie R.',      email:'m***@gomonarch.com',     auth:'sso',      monarch:false, access:[{brand:'My Perfect Stays',role:'Purchaser'}]},
+ {name:'Kahana Receiving',email:'k***@gomonarch.com',    auth:'sso',      monarch:false, access:[{brand:'My Perfect Stays',role:'Receiver'}]},
+ {name:'Shared Regional Buyer',email:'r***@gomonarch.com',auth:'sso',     monarch:false, access:[{brand:'My Perfect Stays',role:'Purchaser'},{brand:'Kona Coast Vacations',role:'Purchaser'}]},
+ {name:'Eden Crest Ops', email:'e***@gmail.com',         auth:'external', monarch:false, access:[{brand:'Eden Crest Vacation Rentals',role:'Purchaser'}]}
 ];
-const ROLE_LIST=['Admin','Purchaser','Receiver','Field/HK','FP&A viewer'];
+const ROLE_LIST=['Site Admin','Purchaser','Receiver','Field/HK','FP&A Viewer'];
 
 function capBadge(c){return c==='behind'?'<span class="badge bg-red-100 text-red-700">behind</span>':(c==='strained'?'<span class="badge bg-amber-100 text-amber-700">strained</span>':'<span class="badge bg-emerald-100 text-emerald-700">normal</span>');}
 function setVendorNum(i,f,v){ADMIN_VENDORS[i][f]=Math.max(0,parseInt(v)||0);}
@@ -1282,7 +1290,6 @@ function addVendor(){
   if(VENDOR_LIST.indexOf(n)<0)VENDOR_LIST.push(n);   // available in catalog vendor dropdowns
   renderAdmin();
 }
-function setUserRole(i,v){ADMIN_USERS[i].role=v;}
 function toggleLocActive(i){LOCATIONS[i].active=!LOCATIONS[i].active;renderAdmin();}
 
 const numIn='style="width:52px;text-align:right;border:1px solid #e2e8f0;border-radius:6px;padding:2px 4px"';
@@ -1294,8 +1301,13 @@ function renderAdmin(){
   document.getElementById('admVendorTable').innerHTML='<table class="dense w-full"><thead><tr><th>Vendor</th><th>Approved</th><th class="num" title="typical lead time â€” drives expected delivery">Expect (d)</th><th class="num" title="stale after this many days">Stale @ (d)</th><th>Capacity</th></tr></thead><tbody>'+
    ADMIN_VENDORS.map(function(v,i){return '<tr><td>'+v.name+'</td><td><input type="checkbox" '+(v.approved?'checked':'')+' onchange="setVendorApproved('+i+',this.checked)"></td><td class="num"><input type="number" value="'+v.expected+'" onchange="setVendorNum('+i+',\'expected\',this.value)" '+ni+'></td><td class="num"><input type="number" value="'+v.max+'" onchange="setVendorNum('+i+',\'max\',this.value)" '+ni+'></td><td><select onchange="setVendorCap('+i+',this.value)" style="font-size:12px;border:1px solid #e2e8f0;border-radius:6px;padding:2px 4px"><option'+(v.capacity==='normal'?' selected':'')+'>normal</option><option'+(v.capacity==='strained'?' selected':'')+'>strained</option><option'+(v.capacity==='behind'?' selected':'')+'>behind</option></select> '+capBadge(v.capacity)+'</td></tr>';}).join('')+
    '</tbody></table>';
-  document.getElementById('admUserTable').innerHTML='<table class="dense w-full"><thead><tr><th>User</th><th>Sign-in</th><th>Role</th><th>Scope</th></tr></thead><tbody>'+
-   ADMIN_USERS.map(function(u,i){return '<tr><td>'+u.name+'<div style="font-size:11px;color:#94a3b8">'+u.email+'</div></td><td>'+(u.auth==='sso'?'<span class="badge bg-sky-100 text-sky-700">Google SSO</span>':'<span class="badge bg-amber-100 text-amber-700">external email</span>')+'</td><td><select onchange="setUserRole('+i+',this.value)" style="font-size:12px;border:1px solid #e2e8f0;border-radius:6px;padding:2px 4px">'+ROLE_LIST.map(function(r){return '<option'+(r===u.role?' selected':'')+'>'+r+'</option>';}).join('')+'</select></td><td class="text-slate-500" style="font-size:12px">'+u.scope+'</td></tr>';}).join('')+
+  document.getElementById('admUserTable').innerHTML='<table class="dense w-full"><thead><tr><th>User</th><th>Sign-in</th><th>Brand access Â· role</th><th></th></tr></thead><tbody>'+
+   ADMIN_USERS.map(function(u,i){
+     var chips = u.monarch
+       ? '<span class="badge bg-violet-100 text-violet-700">Monarch Admin Â· all brands</span>'
+       : (u.access.length? u.access.map(function(a){return '<span class="badge bg-slate-100 text-slate-600" style="margin:1px 2px 1px 0;display:inline-block">'+a.brand+' Â· <b>'+a.role+'</b></span>';}).join('') : '<span class="badge bg-red-100 text-red-700">no access</span>');
+     return '<tr><td>'+u.name+'<div style="font-size:11px;color:#94a3b8">'+u.email+'</div></td><td>'+(u.auth==='sso'?'<span class="badge bg-sky-100 text-sky-700">Google SSO</span>':'<span class="badge bg-amber-100 text-amber-700">external email</span>')+'</td><td>'+chips+'</td><td><button class="btn" style="padding:2px 10px;font-size:12px" onclick="openUser('+i+')">Edit</button></td></tr>';
+   }).join('')+
    '</tbody></table>';
   document.getElementById('admBrandTable').innerHTML='<table class="dense w-full"><thead><tr><th>Brand</th><th>Theme</th><th>Status</th></tr></thead><tbody>'+
    Object.keys(THEMES).map(function(k){var t=THEMES[k];var cur=(sw.value===k);return '<tr'+(cur?' style="background:#f8fafc"':'')+'><td>'+t.name+(cur?' <span class="badge bg-sky-100 text-sky-700">current</span>':'')+'<div style="font-size:11px;color:#94a3b8">'+k+'</div></td><td><span style="display:inline-block;width:14px;height:14px;border-radius:4px;background:'+t.primary+';border:1px solid #e2e8f0;vertical-align:middle"></span> <span style="display:inline-block;width:14px;height:14px;border-radius:4px;background:'+t.accent+';border:1px solid #e2e8f0;vertical-align:middle"></span></td><td><span class="badge bg-emerald-100 text-emerald-700">active</span></td></tr>';}).join('')+
@@ -1336,6 +1348,86 @@ function commitAddLoc(){
   SYS_BY_LOC[name]={}; Object.keys(SYS_BY_LOC[src]).forEach(function(k){SYS_BY_LOC[name][k]=0;});   // on-hand starts empty
   ['invLoc','catLoc','shopLoc'].forEach(function(id){var s=document.getElementById(id);if(s){var o=document.createElement('option');o.textContent=name;s.appendChild(o);}});
   closeAddLoc(); renderAdmin(); renderCat();
+}
+
+// User editor: name/email/sign-in + brand-access rows (mirrors user_brand_access
+// â€” one role per brand; add/remove rows to share a user across brands).
+// Monarch Admin edits any user/brand; a Site Admin would see + edit only rows
+// for their own brands.
+let userDraft=null, userEditIdx=-1;
+document.body.insertAdjacentHTML('beforeend','<div id="userModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:60;align-items:center;justify-content:center">'+
+ '<div style="width:460px;max-width:94vw;background:#fff;border-radius:12px;padding:20px">'+
+ '<div style="display:flex;align-items:center;margin-bottom:10px"><div id="umTitle" style="flex:1;font-weight:600">Edit user</div><button onclick="closeUser()" style="border:none;background:none;cursor:pointer;font-size:15px;color:#94a3b8">âœ•</button></div>'+
+ '<div style="display:flex;gap:10px;margin-bottom:10px"><div style="flex:1"><div style="font-size:11px;color:#94a3b8;margin-bottom:4px">Name</div><input id="umName" style="width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:8px 10px;font-size:13px"></div><div style="flex:1"><div style="font-size:11px;color:#94a3b8;margin-bottom:4px">Email</div><input id="umEmail" style="width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:8px 10px;font-size:13px"></div></div>'+
+ '<div style="display:flex;gap:10px;margin-bottom:10px;align-items:center"><div><div style="font-size:11px;color:#94a3b8;margin-bottom:4px">Sign-in</div><select id="umAuth" style="border:1px solid #e2e8f0;border-radius:8px;padding:8px 10px;font-size:13px"><option value="sso">Google SSO</option><option value="external">External email</option></select></div>'+
+ '<label style="display:flex;align-items:center;gap:6px;font-size:13px;margin-top:14px"><input type="checkbox" id="umMonarch" onchange="renderUserRows()"> Monarch Admin (all brands)</label></div>'+
+ '<div style="font-size:11px;color:#94a3b8;margin-bottom:4px">Brand access <span style="color:#cbd5e1">â€” one role per brand; add rows to share this user across brands</span></div>'+
+ '<div id="umRows" style="margin-bottom:8px"></div>'+
+ '<button class="btn" style="font-size:12px;margin-bottom:14px" onclick="uAddRow()">ï¼‹ Add brand access</button>'+
+ '<button class="btn btn-brand brand-bg" style="width:100%" onclick="saveUser()">Save user</button>'+
+ '</div></div>');
+function brandNames(){return Object.keys(THEMES).map(function(k){return THEMES[k].name;});}
+function renderUserRows(){
+  var mon=document.getElementById('umMonarch').checked;
+  var box=document.getElementById('umRows');
+  if(mon){box.innerHTML='<div style="font-size:12px;color:#7c3aed;background:#f5f3ff;border-radius:8px;padding:8px 10px">Monarch Admin â€” platform-wide, all brands. Brand rows not needed.</div>';return;}
+  box.innerHTML=userDraft.access.map(function(a,idx){
+    return '<div style="display:flex;gap:6px;margin-bottom:6px;align-items:center">'+
+     '<select onchange="userDraft.access['+idx+'].brand=this.value" style="flex:1.4;border:1px solid #e2e8f0;border-radius:8px;padding:6px 8px;font-size:12px">'+brandNames().map(function(b){return '<option'+(b===a.brand?' selected':'')+'>'+b+'</option>';}).join('')+'</select>'+
+     '<select onchange="userDraft.access['+idx+'].role=this.value" style="flex:1;border:1px solid #e2e8f0;border-radius:8px;padding:6px 8px;font-size:12px">'+ROLE_LIST.map(function(r){return '<option'+(r===a.role?' selected':'')+'>'+r+'</option>';}).join('')+'</select>'+
+     '<button class="btn" style="padding:2px 8px;font-size:12px" onclick="uRemoveRow('+idx+')">âœ•</button></div>';
+  }).join('')||'<div style="font-size:12px;color:#ef4444">No access â€” add at least one brand.</div>';
+}
+function uAddRow(){if(document.getElementById('umMonarch').checked)return;userDraft.access.push({brand:brandNames()[0],role:'Purchaser'});renderUserRows();}
+function uRemoveRow(idx){userDraft.access.splice(idx,1);renderUserRows();}
+function openUser(i){
+  userEditIdx=i;
+  var u=i>=0?ADMIN_USERS[i]:{name:'',email:'',auth:'sso',monarch:false,access:[{brand:brandNames()[0],role:'Purchaser'}]};
+  userDraft={access:u.access.map(function(a){return {brand:a.brand,role:a.role};})};
+  document.getElementById('umTitle').textContent=i>=0?('Edit user â€” '+u.name):'Add user';
+  document.getElementById('umName').value=u.name;
+  document.getElementById('umEmail').value=u.email;
+  document.getElementById('umAuth').value=u.auth;
+  document.getElementById('umMonarch').checked=!!u.monarch;
+  renderUserRows();
+  document.getElementById('userModal').style.display='flex';
+}
+function closeUser(){document.getElementById('userModal').style.display='none';}
+function saveUser(){
+  var name=document.getElementById('umName').value.trim();
+  if(!name){alert('Name required.');return;}
+  var mon=document.getElementById('umMonarch').checked;
+  if(!mon&&userDraft.access.length===0){alert('Add at least one brand access (or make them Monarch Admin).');return;}
+  var seen={};for(var a of userDraft.access){if(seen[a.brand]){alert('Duplicate brand: '+a.brand+' â€” one role per user per brand.');return;}seen[a.brand]=1;}
+  var u={name:name,email:document.getElementById('umEmail').value.trim(),auth:document.getElementById('umAuth').value,monarch:mon,access:mon?[]:userDraft.access};
+  if(userEditIdx>=0)ADMIN_USERS[userEditIdx]=u;else ADMIN_USERS.push(u);
+  closeUser();renderAdmin();
+}
+
+// Add brand (Monarch Admin only): name + code + theme colors. New brand joins
+// the switcher and the Brands table; in the real app this creates the brand
+// row + default location + empty catalog.
+document.body.insertAdjacentHTML('beforeend','<div id="brandModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:60;align-items:center;justify-content:center">'+
+ '<div style="width:380px;background:#fff;border-radius:12px;padding:20px">'+
+ '<div style="display:flex;align-items:center;margin-bottom:10px"><div style="flex:1;font-weight:600">Add brand</div><button onclick="closeAddBrand()" style="border:none;background:none;cursor:pointer;font-size:15px;color:#94a3b8">âœ•</button></div>'+
+ '<div style="font-size:11px;color:#94a3b8;margin-bottom:4px">Brand name</div>'+
+ '<input id="abName" placeholder="e.g. Gulf Shores Getaways" style="width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:8px 10px;font-size:13px;margin-bottom:10px" oninput="abSlug()">'+
+ '<div style="font-size:11px;color:#94a3b8;margin-bottom:4px">Code (url-safe)</div>'+
+ '<input id="abCode" style="width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:8px 10px;font-size:13px;margin-bottom:10px">'+
+ '<div style="display:flex;gap:14px;margin-bottom:14px"><div><div style="font-size:11px;color:#94a3b8;margin-bottom:4px">Primary</div><input id="abPrimary" type="color" value="#1F2D3D" style="width:56px;height:32px;border:1px solid #e2e8f0;border-radius:6px;padding:1px"></div><div><div style="font-size:11px;color:#94a3b8;margin-bottom:4px">Accent</div><input id="abAccent" type="color" value="#2A9D8F" style="width:56px;height:32px;border:1px solid #e2e8f0;border-radius:6px;padding:1px"></div><div style="flex:1;font-size:11px;color:#94a3b8;align-self:end;padding-bottom:6px">Logo uploads later; theme applies immediately.</div></div>'+
+ '<button class="btn btn-brand brand-bg" style="width:100%" onclick="commitAddBrand()">Add brand</button>'+
+ '</div></div>');
+function abSlug(){document.getElementById('abCode').value=document.getElementById('abName').value.trim().toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');}
+function openAddBrand(){document.getElementById('abName').value='';document.getElementById('abCode').value='';document.getElementById('brandModal').style.display='flex';}
+function closeAddBrand(){document.getElementById('brandModal').style.display='none';}
+function commitAddBrand(){
+  var name=document.getElementById('abName').value.trim();
+  var code=document.getElementById('abCode').value.trim();
+  if(!name||!code){alert('Name and code required.');return;}
+  if(THEMES[code]){alert('Brand code "'+code+'" already exists.');return;}
+  THEMES[code]={name:name,primary:document.getElementById('abPrimary').value,accent:document.getElementById('abAccent').value,logo:''};
+  var o=document.createElement('option');o.value=code;o.textContent=name;sw.appendChild(o);
+  closeAddBrand();renderAdmin();
 }
 renderAdmin();
 
