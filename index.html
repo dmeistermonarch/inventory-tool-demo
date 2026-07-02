@@ -46,7 +46,7 @@
       <a class="nav-item" data-s="admin"><span>âš™ï¸</span> Admin</a>
     </nav>
     <div class="px-4 py-3 text-white/60 text-xs border-t border-white/10">Danny Meister Â· Purchaser</div>
-    <div class="px-4 pb-3 text-white/40 text-[10px] leading-tight" title="Deploy version â€” if this doesn't match the latest deploy, you're seeing a cached page (hard-refresh: Ctrl+Shift+R)">build <span id="buildStamp"><!--BUILD-->20260702-121847 (7c71ef4)<!--/BUILD--></span></div>
+    <div class="px-4 pb-3 text-white/40 text-[10px] leading-tight" title="Deploy version â€” if this doesn't match the latest deploy, you're seeing a cached page (hard-refresh: Ctrl+Shift+R)">build <span id="buildStamp"><!--BUILD-->20260702-132058 (af8367d)<!--/BUILD--></span></div>
   </aside>
 
   <div class="flex-1 flex flex-col min-w-0">
@@ -147,10 +147,29 @@
         <div class="text-[11px] text-slate-400 mt-2" id="parNote"><b>Quick edit</b> unlocks par/reorder (for the selected location) plus search term &amp; preferred vendor (which apply to <b>all</b> locations) right in the table. <b>Edit</b> on a row opens the full item detail. Item settings are shared across locations; only par &amp; reorder differ per location.</div>
       </section>
 
-      <section id="admin" class="screen max-w-[720px]">
-        <div class="bg-white border border-slate-200 rounded-xl p-5 text-sm text-slate-600">
-          <div class="font-semibold text-slate-800 mb-2">Admin</div>
-          Brands, vendors, warehouses, and users. New-warehouse onboarding copies pars from a template location (for homes coming online). Full access control arrives after first-location rollout.
+      <section id="admin" class="screen max-w-[1100px]">
+        <div class="grid grid-cols-2 gap-4 items-start">
+
+          <div class="bg-white border border-slate-200 rounded-xl p-5">
+            <div class="flex items-center mb-3"><div class="flex-1"><div class="font-semibold text-slate-800">Locations</div><div class="text-xs text-slate-500">Warehouses &amp; storage for this brand. New locations copy par targets from a template location; on-hand starts at 0.</div></div><button class="btn btn-brand brand-bg" onclick="openAddLoc()">ï¼‹ Add location</button></div>
+            <div id="admLocTable"></div>
+          </div>
+
+          <div class="bg-white border border-slate-200 rounded-xl p-5">
+            <div class="flex items-center mb-3"><div class="flex-1"><div class="font-semibold text-slate-800">Vendors</div><div class="text-xs text-slate-500">Lead times drive expected delivery + the stale flag; capacity is shown on the shopping list.</div></div><button class="btn" onclick="addVendor()">ï¼‹ Add vendor</button></div>
+            <div id="admVendorTable"></div>
+          </div>
+
+          <div class="bg-white border border-slate-200 rounded-xl p-5">
+            <div class="flex items-center mb-3"><div class="flex-1"><div class="font-semibold text-slate-800">Users &amp; access</div><div class="text-xs text-slate-500">Per-brand role. Google SSO for Monarch staff; external-email accounts supported (Eden Crest). Full access control (RBAC) arrives after first-location rollout â€” auth via Stoic IdP is pending.</div></div></div>
+            <div id="admUserTable"></div>
+          </div>
+
+          <div class="bg-white border border-slate-200 rounded-xl p-5">
+            <div class="flex items-center mb-3"><div class="flex-1"><div class="font-semibold text-slate-800">Brands</div><div class="text-xs text-slate-500">Each brand gets its own catalog, locations, and theming. Use the switcher (top right) to change context.</div></div></div>
+            <div id="admBrandTable" style="max-height:420px;overflow:auto"></div>
+          </div>
+
         </div>
       </section>
 
@@ -1228,7 +1247,100 @@ function renderShop(){
 renderShop();
 document.querySelectorAll('.nav-item').forEach(function(n){n.addEventListener('click',function(){go(n.dataset.s)})});
 
+/* ===================== Admin ===================== */
+// Vendors: lead times feed expected-delivery + the stale flag (evaluateStale);
+// capacity_status surfaces on the shopping list ("A1 is behind").
+const ADMIN_VENDORS=[
+ {name:'A1A',            approved:true, expected:45, max:90, capacity:'behind'},
+ {name:'Amazon',         approved:true, expected:3,  max:10, capacity:'normal'},
+ {name:'Costco',         approved:true, expected:5,  max:14, capacity:'normal'},
+ {name:"Sam's Club",     approved:true, expected:5,  max:14, capacity:'normal'},
+ {name:'Walmart',        approved:true, expected:4,  max:10, capacity:'normal'},
+ {name:'Home Depot',     approved:true, expected:5,  max:14, capacity:'normal'},
+ {name:'HD Supply',      approved:true, expected:30, max:45, capacity:'strained'}
+];
+const LOCATIONS=[
+ {name:'Kahana', type:'warehouse', active:true},
+ {name:'Kihei',  type:'warehouse', active:true}
+];
+const ADMIN_USERS=[
+ {name:'Danny Meister',  email:'dmeister@gomonarch.com', auth:'sso',      role:'Admin',     scope:'All brands'},
+ {name:'Maddie R.',      email:'m***@gomonarch.com',     auth:'sso',      role:'Purchaser', scope:'My Perfect Stays'},
+ {name:'Kahana Receiving',email:'k***@gomonarch.com',    auth:'sso',      role:'Receiver',  scope:'MPS Â· Kahana'},
+ {name:'Eden Crest Ops', email:'e***@gmail.com',         auth:'external', role:'Purchaser', scope:'Eden Crest'}
+];
+const ROLE_LIST=['Admin','Purchaser','Receiver','Field/HK','FP&A viewer'];
+
+function capBadge(c){return c==='behind'?'<span class="badge bg-red-100 text-red-700">behind</span>':(c==='strained'?'<span class="badge bg-amber-100 text-amber-700">strained</span>':'<span class="badge bg-emerald-100 text-emerald-700">normal</span>');}
+function setVendorNum(i,f,v){ADMIN_VENDORS[i][f]=Math.max(0,parseInt(v)||0);}
+function setVendorCap(i,v){ADMIN_VENDORS[i].capacity=v;renderAdmin();}
+function setVendorApproved(i,v){ADMIN_VENDORS[i].approved=v;renderAdmin();}
+function addVendor(){
+  var n=prompt('Vendor name');if(!n)return;n=n.trim();if(!n)return;
+  if(ADMIN_VENDORS.some(function(v){return v.name.toLowerCase()===n.toLowerCase();})){alert(n+' already exists.');return;}
+  ADMIN_VENDORS.push({name:n,approved:true,expected:7,max:21,capacity:'normal'});
+  if(VENDOR_LIST.indexOf(n)<0)VENDOR_LIST.push(n);   // available in catalog vendor dropdowns
+  renderAdmin();
+}
+function setUserRole(i,v){ADMIN_USERS[i].role=v;}
+function toggleLocActive(i){LOCATIONS[i].active=!LOCATIONS[i].active;renderAdmin();}
+
+const numIn='style="width:52px;text-align:right;border:1px solid #e2e8f0;border-radius:6px;padding:2px 4px"';
+function renderAdmin(){
+  var ni=numIn;
+  document.getElementById('admLocTable').innerHTML='<table class="dense w-full"><thead><tr><th>Location</th><th>Type</th><th class="num">Pars set</th><th>Status</th><th></th></tr></thead><tbody>'+
+   LOCATIONS.map(function(l,i){var pars=CATALOG.filter(function(r){return r.pars[l.name];}).length;return '<tr'+(l.active?'':' style="opacity:.5"')+'><td>'+l.name+'</td><td class="text-slate-500">'+l.type+'</td><td class="num">'+pars+' / '+CATALOG.length+'</td><td>'+(l.active?'<span class="badge bg-emerald-100 text-emerald-700">active</span>':'<span class="badge bg-slate-100 text-slate-500">inactive</span>')+'</td><td><button class="btn" style="padding:1px 8px;font-size:11px" onclick="toggleLocActive('+i+')">'+(l.active?'deactivate':'activate')+'</button></td></tr>';}).join('')+
+   '</tbody></table>';
+  document.getElementById('admVendorTable').innerHTML='<table class="dense w-full"><thead><tr><th>Vendor</th><th>Approved</th><th class="num" title="typical lead time â€” drives expected delivery">Expect (d)</th><th class="num" title="stale after this many days">Stale @ (d)</th><th>Capacity</th></tr></thead><tbody>'+
+   ADMIN_VENDORS.map(function(v,i){return '<tr><td>'+v.name+'</td><td><input type="checkbox" '+(v.approved?'checked':'')+' onchange="setVendorApproved('+i+',this.checked)"></td><td class="num"><input type="number" value="'+v.expected+'" onchange="setVendorNum('+i+',\'expected\',this.value)" '+ni+'></td><td class="num"><input type="number" value="'+v.max+'" onchange="setVendorNum('+i+',\'max\',this.value)" '+ni+'></td><td><select onchange="setVendorCap('+i+',this.value)" style="font-size:12px;border:1px solid #e2e8f0;border-radius:6px;padding:2px 4px"><option'+(v.capacity==='normal'?' selected':'')+'>normal</option><option'+(v.capacity==='strained'?' selected':'')+'>strained</option><option'+(v.capacity==='behind'?' selected':'')+'>behind</option></select> '+capBadge(v.capacity)+'</td></tr>';}).join('')+
+   '</tbody></table>';
+  document.getElementById('admUserTable').innerHTML='<table class="dense w-full"><thead><tr><th>User</th><th>Sign-in</th><th>Role</th><th>Scope</th></tr></thead><tbody>'+
+   ADMIN_USERS.map(function(u,i){return '<tr><td>'+u.name+'<div style="font-size:11px;color:#94a3b8">'+u.email+'</div></td><td>'+(u.auth==='sso'?'<span class="badge bg-sky-100 text-sky-700">Google SSO</span>':'<span class="badge bg-amber-100 text-amber-700">external email</span>')+'</td><td><select onchange="setUserRole('+i+',this.value)" style="font-size:12px;border:1px solid #e2e8f0;border-radius:6px;padding:2px 4px">'+ROLE_LIST.map(function(r){return '<option'+(r===u.role?' selected':'')+'>'+r+'</option>';}).join('')+'</select></td><td class="text-slate-500" style="font-size:12px">'+u.scope+'</td></tr>';}).join('')+
+   '</tbody></table>';
+  document.getElementById('admBrandTable').innerHTML='<table class="dense w-full"><thead><tr><th>Brand</th><th>Theme</th><th>Status</th></tr></thead><tbody>'+
+   Object.keys(THEMES).map(function(k){var t=THEMES[k];var cur=(sw.value===k);return '<tr'+(cur?' style="background:#f8fafc"':'')+'><td>'+t.name+(cur?' <span class="badge bg-sky-100 text-sky-700">current</span>':'')+'<div style="font-size:11px;color:#94a3b8">'+k+'</div></td><td><span style="display:inline-block;width:14px;height:14px;border-radius:4px;background:'+t.primary+';border:1px solid #e2e8f0;vertical-align:middle"></span> <span style="display:inline-block;width:14px;height:14px;border-radius:4px;background:'+t.accent+';border:1px solid #e2e8f0;vertical-align:middle"></span></td><td><span class="badge bg-emerald-100 text-emerald-700">active</span></td></tr>';}).join('')+
+   '</tbody></table>';
+}
+
+// Add location: copies par targets from a template location (GO-LIVE-SETUP â€”
+// new homes coming online); on-hand starts at 0, so everything shows as
+// below-reorder until stocked/counted. The new location appears in every
+// location dropdown (Inventory, Catalog & pars, Shopping).
+document.body.insertAdjacentHTML('beforeend','<div id="addLocModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:60;align-items:center;justify-content:center">'+
+ '<div style="width:380px;background:#fff;border-radius:12px;padding:20px">'+
+ '<div style="display:flex;align-items:center;margin-bottom:10px"><div style="flex:1;font-weight:600">Add location</div><button onclick="closeAddLoc()" style="border:none;background:none;cursor:pointer;font-size:15px;color:#94a3b8">âœ•</button></div>'+
+ '<div style="font-size:11px;color:#94a3b8;margin-bottom:4px">Name</div>'+
+ '<input id="alName" placeholder="e.g. Lahaina" style="width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:8px 10px;font-size:13px;margin-bottom:10px">'+
+ '<div style="font-size:11px;color:#94a3b8;margin-bottom:4px">Type</div>'+
+ '<select id="alType" style="width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:8px 10px;font-size:13px;margin-bottom:10px"><option>warehouse</option><option>cabin</option><option>property</option><option>other</option></select>'+
+ '<div style="font-size:11px;color:#94a3b8;margin-bottom:4px">Copy par targets from</div>'+
+ '<select id="alCopy" style="width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:8px 10px;font-size:13px;margin-bottom:6px"></select>'+
+ '<div style="font-size:11px;color:#94a3b8;margin-bottom:12px">Pars copy from the template; on-hand starts at 0 (count or receive to stock it).</div>'+
+ '<button class="btn btn-brand brand-bg" style="width:100%" onclick="commitAddLoc()">Add location</button>'+
+ '</div></div>');
+function openAddLoc(){
+  var sel=document.getElementById('alCopy');
+  sel.innerHTML=LOCATIONS.filter(function(l){return l.active;}).map(function(l){return '<option>'+l.name+'</option>';}).join('');
+  document.getElementById('alName').value='';
+  document.getElementById('addLocModal').style.display='flex';
+}
+function closeAddLoc(){document.getElementById('addLocModal').style.display='none';}
+function commitAddLoc(){
+  var name=document.getElementById('alName').value.trim();
+  var type=document.getElementById('alType').value;
+  var src=document.getElementById('alCopy').value;
+  if(!name){alert('Name required.');return;}
+  if(LOCATIONS.some(function(l){return l.name.toLowerCase()===name.toLowerCase();})){alert(name+' already exists.');return;}
+  LOCATIONS.push({name:name,type:type,active:true});
+  CATALOG.forEach(function(r){ if(r.pars[src]) r.pars[name]={par:r.pars[src].par,reorder:r.pars[src].reorder}; });
+  SYS_BY_LOC[name]={}; Object.keys(SYS_BY_LOC[src]).forEach(function(k){SYS_BY_LOC[name][k]=0;});   // on-hand starts empty
+  ['invLoc','catLoc','shopLoc'].forEach(function(id){var s=document.getElementById(id);if(s){var o=document.createElement('option');o.textContent=name;s.appendChild(o);}});
+  closeAddLoc(); renderAdmin(); renderCat();
+}
+renderAdmin();
+
 sw.value="my-perfect-stays"; applyBrand("my-perfect-stays");
+sw.addEventListener('change',renderAdmin);   // keep the Brands table's "current" chip in sync
 </script>
 </body>
 </html>
