@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inventory & Purchasing Tool 2.0 — wired prototype</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  :root{ --brand:#1F2D3D; --accent:#2A9D8F; }
+  html,body{font-family:'Inter',system-ui,-apple-system,sans-serif;height:100%}
+  .brand-bg{background:var(--brand)}
+  .accent-bg{background:var(--accent)}
+  .brand-text{color:var(--brand)}
+  .accent-text{color:var(--accent)}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;font-size:14px;cursor:pointer;color:rgba(255,255,255,.8)}
+  .nav-item:hover{background:rgba(255,255,255,.10);color:#fff}
+  .nav-item.active{background:rgba(255,255,255,.18);color:#fff;font-weight:500;box-shadow:inset 3px 0 0 var(--accent)}
+  .screen{display:none}.screen.active{display:block}
+  .badge{font-size:11px;font-weight:500;padding:2px 8px;border-radius:6px;white-space:nowrap}
+  table.dense td,table.dense th{padding:9px 10px;font-size:13px}
+  table.dense th{font-weight:500;color:#64748b;text-align:left;background:#f8fafc;border-bottom:1px solid #e2e8f0}
+  table.dense td{border-top:1px solid #f1f5f9}
+  .num{text-align:right;font-variant-numeric:tabular-nums}
+  .btn{font-size:13px;padding:6px 12px;border-radius:8px;border:1px solid #e2e8f0;background:#fff;cursor:pointer;color:#334155}
+  .btn:hover{background:#f8fafc}
+  .btn-brand{color:#fff;border:none;background:var(--brand)!important}
+  .logo-chip{background:#fff;border-radius:8px;padding:6px 8px;display:flex;align-items:center;justify-content:center;height:44px}
+  .logo-chip img{max-height:32px;max-width:150px;object-fit:contain}
+</style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+<div class="flex h-screen">
+
+  <aside class="w-60 brand-bg flex flex-col flex-shrink-0">
+    <div class="px-3 py-4">
+      <div class="logo-chip"><img id="brandLogo" src="" alt="brand logo"></div>
+      <div class="text-white/70 text-[11px] uppercase tracking-wider mt-2 px-1">Inventory 2.0</div>
+    </div>
+    <nav class="flex-1 px-2 space-y-1" id="nav">
+      <a class="nav-item active" data-s="dash"><span>📊</span> Dashboard</a>
+      <a class="nav-item" data-s="shop"><span>🛒</span> Shopping list</a>
+      <a class="nav-item" data-s="recv"><span>📦</span> Receiving</a>
+      <a class="nav-item" data-s="orders"><span>🧾</span> Orders</a>
+      <a class="nav-item" data-s="counts"><span>📋</span> Inventory</a>
+      <a class="nav-item" data-s="cat"><span>📚</span> Catalog &amp; pars</a>
+      <a class="nav-item" data-s="admin"><span>⚙️</span> Admin</a>
+    </nav>
+    <div class="px-4 py-3 text-white/60 text-xs border-t border-white/10">Danny Meister · Purchaser</div>
+  </aside>
+
+  <div class="flex-1 flex flex-col min-w-0">
+    <header class="h-14 bg-white border-b border-slate-200 px-5 flex items-center gap-4 flex-shrink-0">
+      <div id="pageTitle" class="text-base font-semibold text-slate-800">Dashboard</div>
+      <div class="flex-1"></div>
+      <input placeholder="Search…" class="w-56 px-3 py-1.5 text-sm border border-slate-200 rounded-md bg-slate-50">
+      <label class="text-xs text-slate-400">Brand</label>
+      <select id="brandSwitcher" class="text-sm border border-slate-200 rounded-md px-2 py-1.5 bg-white max-w-[200px]"></select>
+    </header>
+
+    <main class="flex-1 overflow-auto p-6">
+
+      <section id="dash" class="screen active max-w-[1100px]">
+        <div class="grid grid-cols-4 gap-4 mb-6">
+          <div class="bg-white border border-slate-200 rounded-xl p-4"><div class="text-xs text-slate-500">Replenishment due</div><div class="text-2xl font-semibold mt-1">18</div></div>
+          <div class="bg-white border border-slate-200 rounded-xl p-4"><div class="text-xs text-slate-500">Pending receives</div><div class="text-2xl font-semibold mt-1">7</div></div>
+          <div class="bg-white border border-slate-200 rounded-xl p-4"><div class="text-xs text-slate-500">Stale orders</div><div class="text-2xl font-semibold mt-1 text-red-600">3</div></div>
+          <div class="bg-white border border-slate-200 rounded-xl p-4"><div class="text-xs text-slate-500">MTD spend</div><div class="text-2xl font-semibold mt-1">$12,480</div></div>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-xl p-5 mb-4">
+          <div class="text-sm font-semibold mb-1">Needs attention</div>
+          <div class="flex items-center gap-3 py-3 border-t border-slate-100"><span>⚠️</span><div class="flex-1"><div class="text-sm">Order O-1042 · Costco · Main Warehouse</div><div class="text-xs text-slate-500">5 days past expected delivery</div></div><span class="badge bg-red-100 text-red-700">Stale</span><button class="btn">Override</button></div>
+          <div class="flex items-center gap-3 py-3 border-t border-slate-100"><span>📦</span><div class="flex-1"><div class="text-sm">Order O-1039 · Sam's Club · Main Warehouse</div><div class="text-xs text-slate-500">4 of 6 lines received</div></div><span class="badge bg-amber-100 text-amber-700">Partial</span><button class="btn" onclick="go('recv')">Receive</button></div>
+          <div class="flex items-center gap-3 py-3 border-t border-slate-100"><span>🔎</span><div class="flex-1"><div class="text-sm">K-Cups — Donut Shop 72ct</div><div class="text-xs text-slate-500">Price-check match looks unreliable</div></div><span class="badge bg-sky-100 text-sky-700">Review</span><button class="btn">Fix</button></div>
+          <div class="flex items-center gap-3 py-3 border-t border-slate-100"><span>🕓</span><div class="flex-1"><div class="text-sm">MPS Storage · 6 par levels not reviewed in 6+ months</div></div><button class="btn">Review pars</button></div>
+        </div>
+
+        <details class="bg-white border border-slate-200 rounded-xl p-5 mb-4">
+          <summary class="text-sm font-semibold cursor-pointer">Cost adjustments needed in Breezeway <span class="text-xs font-normal text-slate-400">(2)</span></summary>
+          <div class="flex items-center gap-3 py-3 mt-2 border-t border-slate-100"><span>💲</span><div class="flex-1"><div class="text-sm">Dish Soap — Dawn Ultra 56oz</div><div class="text-xs text-slate-500">Paid $13.20 · Breezeway cost $11.90 — update so markup captures</div></div><button class="btn">Open in Breezeway</button></div>
+          <div class="flex items-center gap-3 py-3 border-t border-slate-100"><span>💲</span><div class="flex-1"><div class="text-sm">Trash Bags — Glad 13gal 200ct</div><div class="text-xs text-slate-500">Paid $26.40 · Breezeway cost $24.98</div></div><button class="btn">Open in Breezeway</button></div>
+        </details>
+
+        <details class="bg-white border border-slate-200 rounded-xl p-5">
+          <summary class="text-sm font-semibold cursor-pointer">Supply risk <span class="text-xs font-normal text-slate-400">(1)</span></summary>
+          <div class="flex items-center gap-3 py-3 mt-2 border-t border-slate-100"><span>🚚</span><div class="flex-1"><div class="text-sm">A1A — bath towels</div><div class="text-xs text-slate-500">~3 weeks behind usual lead time · consider fallback vendor</div></div><span class="badge bg-amber-100 text-amber-700">Behind</span></div>
+        </details>
+      </section>
+
+      <section id="shop" class="screen max-w-[1100px]">
+        <div class="flex flex-wrap items-center gap-2 mb-4">
+          <div class="flex-1 text-sm text-slate-500">Replenishment · grouped by supplier</div>
+          <select id="shopLoc" class="text-sm border border-slate-200 rounded-md px-2 py-1.5 bg-white"><option>Kahana</option><option>Kihei</option></select>
+          <button class="btn" onclick="populateShop()">↻ Populate from on-hand</button>
+          <button class="btn" onclick="toggleAll()">☑ Select all / none</button>
+          <button class="btn" onclick="alert('Price-checks all selected items in one batch (cached where fresh, live only where stale).')">Price-check selected</button>
+          <button class="btn" onclick="removeSelected()">Remove selected</button>
+          <button class="btn" onclick="openOneOff()">+ Add item / one-off</button>
+          <button class="btn btn-brand brand-bg">⚡ Run weekly order</button>
+        </div>
+        <div id="shopGroups"></div>
+        <div class="text-[11px] text-slate-400 mt-2">Change an item's vendor (or pick one in its price compare) to move it into that supplier's section. Each supplier section has a select-all for bulk actions — price-check or create the order for that vendor. On-order is shown beside on-hand so you can skip what's already inbound.</div>
+      </section>
+
+      <section id="recv" class="screen max-w-[720px]">
+        <div id="recvCard"></div>
+      </section>
+
+      <section id="orders" class="screen max-w-[1100px]">
+        <div id="ordersList">
+          <div class="flex flex-wrap items-center gap-2 mb-3">
+            <input placeholder="Search item, order #, vendor, PO…" class="flex-1 min-w-[200px] text-sm border border-slate-200 rounded-md px-3 py-1.5 bg-slate-50">
+            <select class="text-sm border border-slate-200 rounded-md px-2 py-1.5 bg-white"><option>Ordered date</option><option>Received date</option></select>
+            <input type="date" class="text-sm border border-slate-200 rounded-md px-2 py-1.5 bg-white"><span class="text-slate-400 text-sm">–</span><input type="date" class="text-sm border border-slate-200 rounded-md px-2 py-1.5 bg-white">
+            <select class="text-sm border border-slate-200 rounded-md px-2 py-1.5 bg-white"><option>All statuses</option><option>Open</option><option>Submitted</option><option>Partial</option><option>Received</option><option>Stale</option></select>
+          </div>
+          <div class="bg-white border border-slate-200 rounded-xl overflow-hidden">
+            <table class="dense w-full">
+              <thead><tr><th>Order</th><th>Vendor</th><th>Location</th><th>Ordered</th><th class="num">Lines</th><th class="num">Total</th><th>Status</th><th></th></tr></thead>
+              <tbody>
+                <tr><td class="font-medium">O-1042</td><td>Costco</td><td>Main Warehouse</td><td>6/15</td><td class="num">2</td><td class="num">$219.86</td><td><span class="badge bg-red-100 text-red-700">Stale</span></td><td><button class="btn" onclick="showOrder('O-1042')">View</button></td></tr>
+                <tr><td class="font-medium">O-1040</td><td>Amazon</td><td>Eden Lodge A</td><td>6/27</td><td class="num">3</td><td class="num">$182.43</td><td><span class="badge bg-blue-100 text-blue-700">Submitted</span></td><td><button class="btn" onclick="showOrder('O-1040')">View</button></td></tr>
+                <tr><td class="font-medium">O-1039</td><td>Sam's Club</td><td>Main Warehouse</td><td>6/18</td><td class="num">3</td><td class="num">$201.40</td><td><span class="badge bg-amber-100 text-amber-700">Partial</span></td><td><button class="btn" onclick="showOrder('O-1039')">View</button></td></tr>
+                <tr><td class="font-medium">O-1036</td><td>Amazon</td><td>Cabin 1</td><td>6/12</td><td class="num">2</td><td class="num">$80.45</td><td><span class="badge bg-emerald-100 text-emerald-700">Received</span></td><td><button class="btn" onclick="showOrder('O-1036')">View</button></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div id="orderDetail" style="display:none"></div>
+      </section>
+
+      <section id="counts" class="screen max-w-[1100px]">
+        <div class="flex items-center gap-2 mb-4">
+          <div class="text-sm text-slate-500">On-hand of record</div>
+          <select id="invLoc" onchange="changeLoc(this.value)" class="text-sm border border-slate-200 rounded-md px-2 py-1.5 bg-white"><option>Kahana</option><option>Kihei</option></select>
+          <input placeholder="Search item…" class="flex-1 text-sm border border-slate-200 rounded-md px-3 py-1.5 bg-slate-50">
+          <button class="btn btn-brand brand-bg" onclick="openCount()">📱 Walk &amp; Count</button>
+        </div>
+        <div class="bg-white border border-slate-200 rounded-xl overflow-hidden"><div id="invTable"></div></div>
+        <div class="text-[11px] text-slate-400 mt-2">The on-hand of record for every item at this location. "Start count session" opens the phone flow to walk around and update quantities — only items you count change, and each posts its variance to the ledger.</div>
+      </section>
+
+      <section id="cat" class="screen max-w-[1100px]">
+        <div class="flex items-center gap-2 mb-4"><div class="flex-1 text-sm text-slate-500">Catalog · per-location pars</div><select id="catLoc" onchange="changeCatLoc(this.value)" class="text-sm border border-slate-200 rounded-md px-2 py-1.5 bg-white"><option>Kahana</option><option>Kihei</option></select><button class="btn" id="parEditBtn" onclick="toggleParEdit()">Quick edit</button><button class="btn">Import CSV</button><button class="btn">+ Add item</button></div>
+        <div class="bg-white border border-slate-200 rounded-xl overflow-hidden"><div id="catTable"></div></div>
+        <div class="text-[11px] text-slate-400 mt-2" id="parNote"><b>Quick edit</b> unlocks par/reorder (for the selected location) plus search term &amp; preferred vendor (which apply to <b>all</b> locations) right in the table. <b>Edit</b> on a row opens the full item detail. Item settings are shared across locations; only par &amp; reorder differ per location.</div>
+      </section>
+
+      <section id="admin" class="screen max-w-[720px]">
+        <div class="bg-white border border-slate-200 rounded-xl p-5 text-sm text-slate-600">
+          <div class="font-semibold text-slate-800 mb-2">Admin</div>
+          Brands, vendors, warehouses, and users. New-warehouse onboarding copies pars from a template location (for homes coming online). Full access control arrives after first-location rollout.
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<script>
+"use strict";
+var ShoppingEngine = (() => {
+  var __defProp = Object.defineProperty;
+  var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+  var __getOwnPropNames = Object.getOwnPropertyNames;
+  var __hasOwnProp = Object.prototype.hasOwnProperty;
+  var __export = (target, all) => {
+    for (var name in all)
+      __defProp(target, name, { get: all[name], enumerable: true });
+  };
+  var __copyProps = (to, from, except, desc) => {
+    if (from && typeof from === "object" || typeof from === "function") {
+      for (let key of __getOwnPropNames(from))
+        if (!__hasOwnProp.call(to, key) && key !== except)
+          __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+    }
+    return to;
+  };
+  var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+
+  // src/index.ts
+  var index_exports = {};
+  __export(index_exports, {
+    DEFAULT_CONFIG: () => DEFAULT_CONFIG,
+    DEFAULT_MATCH_CONFIG: () => DEFAULT_MATCH_CONFIG,
+    DEFAULT_STALE_CONFIG: () => DEFAULT_STALE_CONFIG,
+    OVERRIDE_DEFAULT_DAYS: () => OVERRIDE_DEFAULT_DAYS,
+    OVERRIDE_MAX_DAYS: () => OVERRIDE_MAX_DAYS,
+    OVERRIDE_MIN_DAYS: () => OVERRIDE_MIN_DAYS,
+    REOPEN_MIN_REASON: () => REOPEN_MIN_REASON,
+    SANITY_RATIO_HIGH: () => SANITY_RATIO_HIGH,
+    SANITY_RATIO_LOW: () => SANITY_RATIO_LOW,
+    addDaysISO: () => addDaysISO,
+    applyReceipt: () => applyReceipt,
+    brandMatches: () => brandMatches,
+    cancelRemaining: () => cancelRemaining,
+    computeSavings: () => computeSavings,
+    coreTerms: () => coreTerms,
+    correctReceivedQty: () => correctReceivedQty,
+    evaluateStale: () => evaluateStale,
+    leadTimeDays: () => leadTimeDays,
+    matchListings: () => matchListings,
+    parsePack: () => parsePack,
+    parseSizes: () => parseSizes,
+    reopenOrder: () => reopenOrder,
+    shouldPriceCheck: () => shouldPriceCheck,
+    sizeMatches: () => sizeMatches,
+    suggest: () => suggest,
+    termOverlap: () => termOverlap
+  });
+
+  // src/types.ts
+  var DEFAULT_CONFIG = {
+    confidence_threshold: 0.7,
+    over_buy_cap_multiple: 3
+  };
+
+  // src/suggest.ts
+  var SOURCE_RANK = {
+    hostgpo: 0,
+    lowes: 1,
+    amazon_serp: 2,
+    walmart: 2,
+    manual: 3
+  };
+  function suggest(item, par, state, category, config) {
+    const cfg = { ...DEFAULT_CONFIG, ...config };
+    const reasons = [];
+    const flags = /* @__PURE__ */ new Set();
+    if (item.status === "discontinued") {
+      return {
+        show: false,
+        need_units: 0,
+        recommendation: null,
+        alternatives: [],
+        match_status: "pending",
+        match_confidence: 0,
+        auto_orderable: false,
+        flags: [],
+        reasons: ["Item is discontinued \u2014 excluded from ordering and counts."]
+      };
+    }
+    const reorderPoint = par.reorder_point ?? Math.floor(par.par * 0.5);
+    const grossNeed = Math.max(0, par.par - state.on_hand);
+    const needUnits = Math.max(0, par.par - (state.on_hand + state.on_order_open));
+    const show = state.on_hand <= reorderPoint;
+    if (grossNeed > 0 && needUnits === 0 && state.on_order_open > 0) {
+      flags.add("inbound_covers");
+      reasons.push(
+        `Inbound covers the need: ${state.on_order_open} already on order \u2014 suggested qty 0. Skip this cycle or buy anyway.`
+      );
+    }
+    if (item.event_driven) {
+      flags.add("event_driven_consider_urgent");
+      reasons.push(
+        "Demand is event-driven (e.g. damage/wear replacement) \u2014 par alone will not keep this in stock; consider the urgent/off-cycle lane."
+      );
+    }
+    const lock = item.quality_lock ?? category?.quality_lock ?? "price_ok";
+    const allOptions = state.options;
+    let candidates = [...allOptions];
+    const pinned = item.canonical_sku;
+    const isSkuLocked = !!((item.match_locked || lock === "lock_sku") && pinned);
+    if (isSkuLocked) {
+      candidates = candidates.filter((o) => o.sku === pinned);
+      flags.add("quality_locked");
+      reasons.push(
+        `Match locked to SKU ${pinned}: price-check compares where to buy that exact product, never substitutes another.`
+      );
+    } else if (lock === "lock_brand" && item.preferred_brand) {
+      const brand = item.preferred_brand.toLowerCase();
+      const cheapestOverall = cheapestUnitPrice(allOptions);
+      candidates = candidates.filter((o) => (o.brand ?? "").toLowerCase() === brand);
+      flags.add("quality_locked");
+      const blocked = cheapestOverall;
+      const cheapestLocked = cheapestUnitPrice(candidates);
+      if (blocked && cheapestLocked && blocked.perUnit < cheapestLocked.perUnit) {
+        reasons.push(
+          `Quality lock: brand "${item.preferred_brand}" required. A cheaper option exists (${formatMoney(
+            blocked.perUnit
+          )}/unit via ${blocked.option.vendor_name ?? blocked.option.vendor_id}) but is blocked by the lock.`
+        );
+      } else {
+        reasons.push(`Quality lock: brand "${item.preferred_brand}" required; off-brand options are excluded.`);
+      }
+    }
+    if (item.approved_vendor_ids && item.approved_vendor_ids.length > 0) {
+      candidates = candidates.filter((o) => item.approved_vendor_ids.includes(o.vendor_id));
+    }
+    const bestConfidence = candidates.length ? Math.max(...candidates.map((o) => o.confidence ?? 1)) : 0;
+    const matchConfidence = isSkuLocked ? 1 : bestConfidence;
+    let matchStatus;
+    if (candidates.length === 0) {
+      matchStatus = "pending";
+      reasons.push("No confident product match yet \u2014 needs a search term / SKU before ordering.");
+    } else if (isSkuLocked) {
+      matchStatus = "ok";
+    } else if (item.needs_review || matchConfidence < cfg.confidence_threshold) {
+      matchStatus = "needs_review";
+      reasons.push(
+        `Match confidence ${matchConfidence.toFixed(
+          2
+        )} below threshold ${cfg.confidence_threshold} \u2014 routed to the review lane; will NOT be auto-ordered until a one-time term/SKU fix locks it.`
+      );
+    } else {
+      matchStatus = "ok";
+    }
+    if (candidates.length > 0 && candidates.every((o) => o.stale)) {
+      flags.add("stale_prices");
+      reasons.push("All cached prices are stale \u2014 recommendation stands, but a price refresh is advisable.");
+    }
+    let recommendation = null;
+    let alternatives = [];
+    if (needUnits > 0 && candidates.length > 0) {
+      const built = candidates.map((o) => buildPlan(o, item, par, needUnits, cfg, flags, reasons)).filter((p) => p !== null);
+      const cap = par.max_qty;
+      const withinCap = cap != null ? built.filter((p) => p.units <= cap) : built;
+      if (cap != null && withinCap.length < built.length) {
+        const cheapestAny = [...built].sort(planOrder)[0];
+        const cheapestWithin = [...withinCap].sort(planOrder)[0];
+        if (cheapestAny && cheapestWithin && cheapestAny.units > cap && cheapestAny.total_cost < cheapestWithin.total_cost) {
+          flags.add("over_buy_capped");
+          reasons.push(
+            `A cheaper bulk option (${cheapestAny.packs}\xD7 ${cheapestAny.pack_size}-pack) would exceed max_qty ${cap}; capped to the best plan within the limit.`
+          );
+        }
+      }
+      const ranked = [...withinCap].sort(planOrderBy(cfg.confidence_threshold));
+      recommendation = ranked[0] ?? null;
+      alternatives = ranked.slice(1);
+      if (recommendation) {
+        const cheaperButRiskier = alternatives.find(
+          (p) => p.total_cost < recommendation.total_cost && p.confidence < cfg.confidence_threshold
+        );
+        if (cheaperButRiskier && recommendation.confidence >= cfg.confidence_threshold) {
+          flags.add("low_confidence_alternative");
+          reasons.push(
+            `A cheaper option (${formatMoney(cheaperButRiskier.total_cost)} via ${cheaperButRiskier.vendor_name ?? cheaperButRiskier.vendor_id}) was passed over for low match confidence (${cheaperButRiskier.confidence.toFixed(2)}); buying the better-matched product instead.`
+          );
+        }
+        if (recommendation.source === "manual") {
+          flags.add("off_feed_manual");
+          reasons.push("Recommended via a manual price entry (off-feed vendor, e.g. Costco).");
+        }
+        if (recommendation.source === "hostgpo") {
+          reasons.push("Using HostGPO negotiated pricing (beats public/SERP price).");
+        }
+        const runnerUp = alternatives[0];
+        if (runnerUp && runnerUp.total_cost > recommendation.total_cost) {
+          reasons.push(
+            `Cheapest plan: ${recommendation.note} = ${formatMoney(recommendation.total_cost)} \u2014 vs ${runnerUp.note} = ${formatMoney(runnerUp.total_cost)}.`
+          );
+        } else {
+          reasons.push(`Recommended: ${recommendation.note} = ${formatMoney(recommendation.total_cost)}.`);
+        }
+      }
+    } else if (needUnits > 0 && candidates.length === 0) {
+      flags.add("no_valid_options");
+      reasons.push("Need exists but no valid (matched, in-policy) buying option is available.");
+    }
+    const autoOrderable = matchStatus === "ok" && needUnits > 0 && recommendation !== null;
+    return {
+      show,
+      need_units: needUnits,
+      recommendation,
+      alternatives,
+      match_status: matchStatus,
+      match_confidence: matchConfidence,
+      auto_orderable: autoOrderable,
+      flags: [...flags],
+      reasons
+    };
+  }
+  function effectivePackSize(o, item, par, cfg, flags, reasons) {
+    let ps = o.pack_size;
+    if (o.is_set || item.is_set || o.is_piece) {
+      if (ps !== 1) {
+        reasons.push(`${vendorLabel(o)}: treated as a set/piece = 1 unit (no pack multiply).`);
+      }
+      return 1;
+    }
+    const guardrail = par.par * cfg.over_buy_cap_multiple;
+    if (guardrail > 0 && ps > guardrail) {
+      const fallback = item.order_increment ?? 1;
+      flags.add("parse_fallback");
+      reasons.push(
+        `${vendorLabel(o)}: parsed pack ${ps} exceeds par\xD7${cfg.over_buy_cap_multiple} (${guardrail}) \u2014 rejected as a bad parse; using order increment ${fallback}.`
+      );
+      return Math.max(1, fallback);
+    }
+    return Math.max(1, ps);
+  }
+  function buildPlan(o, item, par, need, cfg, flags, reasons) {
+    const ps = effectivePackSize(o, item, par, cfg, flags, reasons);
+    if (ps <= 0) return null;
+    const packs = Math.ceil(need / ps);
+    const units = packs * ps;
+    const totalCost = round2(packs * o.pack_price);
+    const perUnit = round2(o.pack_price / ps);
+    const pieces = item.pieces_per_catalog_unit ?? 1;
+    const plan = {
+      vendor_id: o.vendor_id,
+      vendor_name: o.vendor_name,
+      source: o.source,
+      pack_size: ps,
+      packs,
+      units,
+      pack_price: o.pack_price,
+      total_cost: totalCost,
+      per_unit_cost: perUnit,
+      confidence: o.confidence ?? 1,
+      over_buy: units - need,
+      product_url: o.product_url,
+      note: `need ${need} \u2192 ${packs}\xD7 ${ps}-pack (${units})`
+    };
+    if (pieces > 1) {
+      plan.per_piece_cost = round2(perUnit / pieces);
+    }
+    return plan;
+  }
+  function planOrder(a, b) {
+    if (a.total_cost !== b.total_cost) return a.total_cost - b.total_cost;
+    if (a.over_buy !== b.over_buy) return a.over_buy - b.over_buy;
+    const ra = SOURCE_RANK[a.source] ?? 9;
+    const rb = SOURCE_RANK[b.source] ?? 9;
+    if (ra !== rb) return ra - rb;
+    return a.vendor_id < b.vendor_id ? -1 : a.vendor_id > b.vendor_id ? 1 : 0;
+  }
+  function planOrderBy(threshold) {
+    return (a, b) => {
+      const ta = a.confidence >= threshold ? 0 : 1;
+      const tb = b.confidence >= threshold ? 0 : 1;
+      if (ta !== tb) return ta - tb;
+      return planOrder(a, b);
+    };
+  }
+  function cheapestUnitPrice(options) {
+    let best = null;
+    for (const o of options) {
+      const ps = Math.max(1, o.pack_size);
+      const perUnit = o.pack_price / ps;
+      if (!best || perUnit < best.perUnit) best = { option: o, perUnit };
+    }
+    return best;
+  }
+  function vendorLabel(o) {
+    return o.vendor_name ?? o.vendor_id;
+  }
+  function round2(n) {
+    return Math.round(n * 100) / 100;
+  }
+  function formatMoney(n) {
+    return `${round2(n).toFixed(2)}`;
+  }
+
+  // src/matching/types.ts
+  var DEFAULT_MATCH_CONFIG = {
+    ok_threshold: 0.7,
+    review_threshold: 0.4,
+    unanchored_cap: 0.6,
+    noise_floor: 0.25,
+    weights: { brand: 0.35, size: 0.3, pack: 0.15, term: 0.2 }
+  };
+
+  // src/matching/parse.ts
+  var PACK_RE = /(?:pack of\s*(\d+))|(\d+)\s*[- ]?\s*(counts?|ct|packs?|pk|rolls?|sheets?|pieces?|pcs|bags?|tablets?|loads?|wipes?|filters?|pods?|packets?)\b/gi;
+  var SIZE_RE = /(\d+(?:\.\d+)?)\s*-?\s*(fl\.?\s?oz|floz|oz|milliliters?|ml|liters?|litres?|l|quarts?|qt|gallons?|gal|cups?|inch(?:es)?|in|feet|ft|pounds?|lbs?|lb|grams?|kg|mg|g|watts?|w)\b/gi;
+  var SIZE_UNIT_NORM = {
+    "fl oz": "floz",
+    "fl. oz": "floz",
+    floz: "floz",
+    oz: "oz",
+    milliliter: "ml",
+    milliliters: "ml",
+    ml: "ml",
+    liter: "l",
+    liters: "l",
+    litre: "l",
+    litres: "l",
+    l: "l",
+    quart: "qt",
+    quarts: "qt",
+    qt: "qt",
+    gallon: "gal",
+    gallons: "gal",
+    gal: "gal",
+    cup: "cup",
+    cups: "cup",
+    inch: "in",
+    inches: "in",
+    in: "in",
+    feet: "ft",
+    ft: "ft",
+    pound: "lb",
+    pounds: "lb",
+    lb: "lb",
+    lbs: "lb",
+    gram: "g",
+    grams: "g",
+    g: "g",
+    kg: "kg",
+    mg: "mg",
+    watt: "w",
+    watts: "w",
+    w: "w"
+  };
+  function parsePack(title) {
+    if (!title) return null;
+    const cands = [];
+    let m;
+    PACK_RE.lastIndex = 0;
+    while ((m = PACK_RE.exec(title)) !== null) {
+      if (m[1]) cands.push({ n: Number(m[1]), unit: "pack" });
+      else if (m[2]) cands.push({ n: Number(m[2]), unit: m[3].toLowerCase() });
+    }
+    if (!cands.length) return null;
+    const preferred = cands.find((c) => /^(count|counts|ct|pack|packs|pk)$/.test(c.unit));
+    return (preferred ?? cands[0]).n;
+  }
+  function parseSizes(title) {
+    if (!title) return [];
+    const out = [];
+    let m;
+    SIZE_RE.lastIndex = 0;
+    while ((m = SIZE_RE.exec(title)) !== null) {
+      const rawUnit = m[2].toLowerCase().replace(/\./g, "").replace(/\s+/g, " ").trim();
+      const unit = SIZE_UNIT_NORM[rawUnit] ?? rawUnit;
+      out.push({ n: Number(m[1]), unit });
+    }
+    return out;
+  }
+  function sizeMatches(targetSpec, title) {
+    if (!targetSpec) return null;
+    const want = parseSizes(targetSpec);
+    if (!want.length) return null;
+    const have = parseSizes(title);
+    if (!have.length) return false;
+    return want.some((w) => have.some((h) => h.n === w.n && h.unit === w.unit));
+  }
+  var norm = (s) => s.toLowerCase().replace(/[^a-z0-9+ ]/g, " ").replace(/\s+/g, " ").trim();
+  function brandMatches(brand, listingBrand, title) {
+    if (!brand) return null;
+    const b = norm(brand);
+    if (!b) return null;
+    const hay = norm(`${listingBrand ?? ""} ${title}`);
+    return b.split(" ").every((tok) => hay.includes(tok));
+  }
+  var STOP = /* @__PURE__ */ new Set([
+    "of",
+    "the",
+    "for",
+    "with",
+    "and",
+    "a",
+    "an",
+    "in",
+    "to",
+    "by",
+    "or",
+    "on",
+    "individual",
+    "generic",
+    "set",
+    "size",
+    "pack",
+    "count",
+    "ct"
+  ]);
+  function coreTerms(term, brand, sizeSpec) {
+    const drop = new Set(STOP);
+    if (brand) norm(brand).split(" ").forEach((t) => drop.add(t));
+    if (sizeSpec) norm(sizeSpec).split(" ").forEach((t) => drop.add(t));
+    return norm(term).split(" ").filter((t) => t.length > 1 && !drop.has(t) && !/^\d+$/.test(t));
+  }
+  function termOverlap(term, title, brand, sizeSpec) {
+    if (!term) return 1;
+    const core = coreTerms(term, brand, sizeSpec);
+    if (!core.length) return 1;
+    const hay = norm(title);
+    const hit = core.filter((t) => hay.includes(t)).length;
+    return hit / core.length;
+  }
+
+  // src/matching/match.ts
+  function matchListings(target, listings, config) {
+    const cfg = { ...DEFAULT_MATCH_CONFIG, ...config, weights: { ...DEFAULT_MATCH_CONFIG.weights, ...config?.weights } };
+    const pinned = target.canonical_sku;
+    if (target.match_locked && pinned) {
+      return listings.filter((l) => l.sku === pinned).map((l) => finalize(l, target, fullConfidencePin(), "ok", [
+        `Pinned to canonical SKU ${pinned} \u2014 exact product, only price/vendor compared.`
+      ]));
+    }
+    const scored = listings.map((l) => scoreListing(l, target, cfg));
+    return scored.filter((o) => o.confidence >= cfg.noise_floor).sort((a, b) => b.confidence - a.confidence || a.total_costish - b.total_costish).map(({ total_costish, ...o }) => o);
+  }
+  function scoreListing(l, t, cfg) {
+    const reasons = [];
+    const w = cfg.weights;
+    const brand = brandMatches(t.preferred_brand, l.brand, l.title);
+    const size = sizeMatches(t.size_spec, l.title);
+    const packParsed = parsePack(l.title);
+    const pack = t.expected_pack != null ? packParsed === t.expected_pack : null;
+    const term = termOverlap(t.search_term ?? t.name, l.title, t.preferred_brand, t.size_spec);
+    let num = 0;
+    let den = 0;
+    const breakdown = { term, anchored: false };
+    if (brand !== null) {
+      breakdown.brand = brand ? 1 : 0;
+      num += w.brand * breakdown.brand;
+      den += w.brand;
+    }
+    if (size !== null) {
+      breakdown.size = size ? 1 : 0;
+      num += w.size * breakdown.size;
+      den += w.size;
+    }
+    if (pack !== null) {
+      breakdown.pack = pack ? 1 : 0;
+      num += w.pack * breakdown.pack;
+      den += w.pack;
+    }
+    num += w.term * term;
+    den += w.term;
+    let confidence = den > 0 ? num / den : term;
+    const anchored = brand === true || size === true || pack === true;
+    breakdown.anchored = anchored;
+    if (!anchored && confidence > cfg.unanchored_cap) {
+      confidence = cfg.unanchored_cap;
+      reasons.push("No brand/size/pack anchor matched \u2014 confidence capped; term overlap alone is not enough to auto-order.");
+    }
+    if (brand === false) reasons.push(`Brand "${t.preferred_brand}" not found in this listing.`);
+    if (size === false) reasons.push(`Size/spec "${t.size_spec}" does not match this listing.`);
+    if (pack === false) reasons.push(`Expected pack ${t.expected_pack}, listing parsed as ${packParsed ?? "unknown"}.`);
+    if (brand === true && size === true) reasons.push("Brand and size both match.");
+    confidence = round22(clamp01(confidence));
+    const status = confidence >= cfg.ok_threshold ? "ok" : confidence >= cfg.review_threshold ? "needs_review" : "pending";
+    const packSize = packParsed && packParsed > 0 ? packParsed : 1;
+    return {
+      ...finalize(l, t, confidence, status, reasons),
+      pack_size: packSize,
+      score: breakdown,
+      total_costish: l.price / packSize
+    };
+  }
+  function finalize(l, _t, confidence, status, reasons) {
+    const packSize = parsePack(l.title);
+    return {
+      vendor_id: l.vendor_id ?? slug(l.vendor_name ?? l.source),
+      vendor_name: l.vendor_name,
+      brand: l.brand,
+      sku: l.sku,
+      pack_size: packSize && packSize > 0 ? packSize : 1,
+      pack_price: l.price,
+      source: l.source,
+      confidence,
+      product_url: l.product_url,
+      stale: l.stale,
+      title: l.title,
+      score: { term: 1, anchored: status === "ok" },
+      match_status: status,
+      reasons
+    };
+  }
+  function fullConfidencePin() {
+    return 1;
+  }
+  function clamp01(n) {
+    return Math.max(0, Math.min(1, n));
+  }
+  function round22(n) {
+    return Math.round(n * 100) / 100;
+  }
+  function slug(s) {
+    return s.replace(/\s+/g, "_").toLowerCase();
+  }
+
+  // src/rules/single-source.ts
+  function shouldPriceCheck(item) {
+    const term = (item.search_term ?? "").trim();
+    if (term === "" || term.toLowerCase() === "none") {
+      return { check: false, reason: 'No search term (blank or "None") \u2014 price-check skipped.' };
+    }
+    const approved = new Set((item.approved_vendor_ids ?? []).filter(Boolean));
+    if (item.preferred_vendor_id) approved.add(item.preferred_vendor_id);
+    if (approved.size <= 1) {
+      return {
+        check: false,
+        reason: "Single-source item (only one approved vendor) \u2014 no price comparison possible; skipped."
+      };
+    }
+    return { check: true, reason: `Price-check across ${approved.size} approved vendors.` };
+  }
+
+  // src/rules/stale.ts
+  var DEFAULT_STALE_CONFIG = { default_max_days: 30 };
+  var OVERRIDE_MIN_DAYS = 1;
+  var OVERRIDE_MAX_DAYS = 60;
+  var OVERRIDE_DEFAULT_DAYS = 14;
+  function toDayNumber(iso) {
+    const [y, m, d] = iso.split("-").map(Number);
+    return Math.floor(Date.UTC(y, (m ?? 1) - 1, d ?? 1) / 864e5);
+  }
+  function addDaysISO(iso, days) {
+    const ms = (toDayNumber(iso) + days) * 864e5;
+    return new Date(ms).toISOString().slice(0, 10);
+  }
+  function evaluateStale(order, today, config) {
+    const cfg = { ...DEFAULT_STALE_CONFIG, ...config };
+    if (order.status === "received" || order.status === "closed") {
+      return { stale: false, state: "closed", reason: "Closed/received orders are never stale." };
+    }
+    let clearOverride;
+    if (order.override_until) {
+      if (toDayNumber(order.override_until) >= toDayNumber(today)) {
+        return { stale: false, state: "override_active", reason: `Active override until ${order.override_until}.` };
+      }
+      clearOverride = true;
+    }
+    if (order.stale_since) {
+      return { stale: true, state: "already_stale", clear_override: clearOverride, reason: "Already flagged stale (idempotent)." };
+    }
+    if (!order.order_date) {
+      return { stale: false, state: "no_order_date", clear_override: clearOverride, reason: "No order date \u2014 cannot evaluate." };
+    }
+    if (!order.vendor_in_config) {
+      return { stale: false, state: "skipped_off_config", clear_override: clearOverride, reason: "Off-config vendor \u2014 never flagged stale." };
+    }
+    const maxDays = order.vendor_max_days && order.vendor_max_days > 0 ? order.vendor_max_days : cfg.default_max_days;
+    const cutoff = addDaysISO(order.order_date, maxDays);
+    if (toDayNumber(today) <= toDayNumber(cutoff)) {
+      return { stale: false, state: "not_stale", cutoff, clear_override: clearOverride, reason: `Within window (cutoff ${cutoff}).` };
+    }
+    return {
+      stale: true,
+      state: "flagged",
+      cutoff,
+      new_stale_since: today,
+      clear_override: clearOverride,
+      reason: `Past cutoff ${cutoff} (order ${order.order_date} + ${maxDays}d).`
+    };
+  }
+
+  // src/rules/savings.ts
+  var SANITY_RATIO_LOW = 0.2;
+  var SANITY_RATIO_HIGH = 5;
+  function round23(n) {
+    return Math.round(n * 100) / 100;
+  }
+  function computeSavings(input) {
+    if (input.catalog_per_piece == null || input.catalog_per_piece <= 0) {
+      return { savings: null, mismatch: false, ratio: null, reason: "No catalog cost \u2014 savings not computed." };
+    }
+    const ratio = round23(input.paid_per_unit / input.catalog_per_piece);
+    if (ratio < SANITY_RATIO_LOW || ratio > SANITY_RATIO_HIGH) {
+      return {
+        savings: null,
+        mismatch: true,
+        ratio,
+        reason: `Unit mismatch \u2014 paid/catalog ratio ${ratio} outside ${SANITY_RATIO_LOW}\xD7\u2013${SANITY_RATIO_HIGH}\xD7; savings blanked.`
+      };
+    }
+    return {
+      savings: round23((input.catalog_per_piece - input.paid_per_unit) * input.qty),
+      mismatch: false,
+      ratio,
+      reason: `Savings = (catalog ${input.catalog_per_piece} \u2212 paid ${input.paid_per_unit}) \xD7 ${input.qty}.`
+    };
+  }
+
+  // src/receiving/receive.ts
+  function round24(n) {
+    return Math.round(n * 100) / 100;
+  }
+  function applyReceipt(input) {
+    const warnings = [];
+    const byId = new Map(input.lines.map((l) => [l.id, l]));
+    const results = [];
+    const receiptById = new Map(input.receipt.map((r) => [r.order_line_id, r]));
+    for (const line of input.lines) {
+      const prior = Math.max(0, line.already_received ?? 0);
+      const remainingBefore = Math.max(0, line.qty_ordered - prior);
+      const r = receiptById.get(line.id);
+      const requested = r ? Math.max(0, r.qty_received) : 0;
+      let acceptedNow = requested;
+      let overReceived = false;
+      let blockedOver = 0;
+      if (requested > remainingBefore) {
+        if (r?.allow_over_receipt) {
+          overReceived = true;
+        } else {
+          acceptedNow = remainingBefore;
+          blockedOver = requested - remainingBefore;
+          warnings.push(
+            `Line ${line.id}: received ${requested} but only ${remainingBefore} remaining \u2014 clamped (${blockedOver} blocked; use override to exceed).`
+          );
+        }
+      }
+      const total = prior + acceptedNow;
+      const remaining = Math.max(0, line.qty_ordered - total);
+      const lineStatus = total <= 0 ? "open" : total >= line.qty_ordered ? "received" : "partial";
+      let savings = null;
+      if (acceptedNow > 0 && r?.actual_unit_cost != null && line.unit_cost != null) {
+        savings = round24((line.unit_cost - r.actual_unit_cost) * acceptedNow);
+      }
+      results.push({
+        order_line_id: line.id,
+        qty_received_now: acceptedNow,
+        qty_received_total: total,
+        remaining,
+        line_status: lineStatus,
+        over_received: overReceived,
+        blocked_over: blockedOver,
+        savings,
+        inventory_delta: acceptedNow > 0 ? { item_id: r?.item_id ?? line.item_id ?? null, qty: acceptedNow } : null
+      });
+    }
+    for (const r of input.receipt) {
+      if (!byId.has(r.order_line_id)) warnings.push(`Receipt references unknown order line ${r.order_line_id}.`);
+    }
+    const allReceived = results.every((r) => r.qty_received_total >= (byId.get(r.order_line_id)?.qty_ordered ?? 0));
+    const anyReceived = results.some((r) => r.qty_received_total > 0);
+    const orderStatus = allReceived ? "received" : anyReceived ? "partial" : "submitted";
+    return { lines: results, order_status: orderStatus, auto_closed: allReceived, warnings };
+  }
+  function cancelRemaining(reason = "canceled_by_vendor") {
+    return { order_status: "closed", close_reason: reason };
+  }
+  function leadTimeDays(orderDateISO, receivedAtISO) {
+    const day = (iso) => {
+      const [y, m, d] = iso.slice(0, 10).split("-").map(Number);
+      return Math.floor(Date.UTC(y, (m ?? 1) - 1, d ?? 1) / 864e5);
+    };
+    return day(receivedAtISO) - day(orderDateISO);
+  }
+
+  // src/receiving/reopen.ts
+  var REOPEN_MIN_REASON = 3;
+  function reopenOrder(input) {
+    const reason = (input.reason ?? "").trim();
+    if (reason.length < REOPEN_MIN_REASON) {
+      return { ok: false, error: "A reason is required to reopen (light gate)." };
+    }
+    if (input.status !== "closed" && input.status !== "received") {
+      return { ok: false, error: `Only closed/received orders can be reopened (status: ${input.status}).` };
+    }
+    const allReceived = input.lines.every((l) => l.qty_received >= l.qty_ordered);
+    const anyReceived = input.lines.some((l) => l.qty_received > 0);
+    const orderStatus = allReceived ? "received" : anyReceived ? "partial" : "submitted";
+    return { ok: true, order_status: orderStatus, close_reason: null, audit: { action: "order_reopened", reason } };
+  }
+  function correctReceivedQty(input) {
+    const reason = (input.reason ?? "").trim();
+    if (reason.length < REOPEN_MIN_REASON) {
+      return { ok: false, error: "A reason is required to correct a received quantity (light gate)." };
+    }
+    const corrected = input.corrected_received;
+    if (!(corrected >= 0) || !Number.isFinite(corrected)) {
+      return { ok: false, error: "Corrected quantity must be zero or more." };
+    }
+    if (corrected > input.qty_ordered && !input.allow_over) {
+      return { ok: false, error: `Corrected ${corrected} exceeds ordered ${input.qty_ordered}; set allow_over to keep it.` };
+    }
+    const delta = corrected - input.previous_received;
+    const lineStatus = corrected <= 0 ? "open" : corrected >= input.qty_ordered ? "received" : "partial";
+    return {
+      ok: true,
+      qty_received: corrected,
+      delta,
+      line_status: lineStatus,
+      over_received: corrected > input.qty_ordered,
+      audit: { action: "receipt_corrected", reason, from: input.previous_received, to: corrected }
+    };
+  }
+  return __toCommonJS(index_exports);
+})();
+
+</script>
+<script>
+const THEMES = {
+  "my-perfect-stays":{name:"My Perfect Stays",primary:"#1E6B8A",accent:"#E84E1C",logo:"branding/logos/my-perfect-stays.png"},
+  "eden-crest":{name:"Eden Crest Vacation Rentals",primary:"#1A1A1A",accent:"#C49A1A",logo:"branding/logos/eden-crest.jpg"},
+  "tahoe-getaways":{name:"Tahoe Getaways",primary:"#4A5568",accent:"#94A3B8",logo:"branding/logos/tahoe-getaways.png"},
+  "rnr-vacation-rentals":{name:"RnR Vacation Rentals",primary:"#1A1A1A",accent:"#C0392B",logo:"branding/logos/rnr-vacation-rentals.png"},
+  "kona-coast-vacations":{name:"Kona Coast Vacations",primary:"#2B2B2B",accent:"#C0392B",logo:"branding/logos/kona-coast-vacations.png"},
+  "hill-country-premier":{name:"Hill Country Premier Lodging",primary:"#2A2A2A",accent:"#D9531E",logo:"branding/logos/hill-country-premier.png"},
+  "blue-ridge":{name:"Blue Ridge Mountain Rentals",primary:"#2C6FB0",accent:"#1B4A6B",logo:"branding/logos/blue-ridge.png"},
+  "best-beach-getaways":{name:"Best Beach Getaways",primary:"#2E86C1",accent:"#8FCDEF",logo:"branding/logos/best-beach-getaways.png"},
+  "stay-duvet":{name:"Stay Duvet",primary:"#10324F",accent:"#D7C6A4",logo:"branding/logos/stay-duvet.png"},
+  "coastal-getaways-sc":{name:"Coastal Getaways of SC",primary:"#1E7FA6",accent:"#8DC63F",logo:"branding/logos/coastal-getaways-sc.png"},
+  "vacation-rental-authority":{name:"Vacation Rental Authority",primary:"#1F609E",accent:"#4A90D9",logo:"branding/logos/vacation-rental-authority.png"},
+  "surf-style":{name:"Surf Style Vacation Homes",primary:"#1A5F8F",accent:"#C4A96A",logo:"branding/logos/surf-style.png"},
+  "new-england-vacation-rentals":{name:"New England Vacation Rentals",primary:"#1A3A6B",accent:"#F8ED00",logo:"branding/logos/new-england-vacation-rentals.png"},
+  "seaside-vacations":{name:"Seaside Vacations",primary:"#1B5E6A",accent:"#F5C93C",logo:"branding/logos/seaside-vacations.png"},
+  "coastal-view":{name:"Coastal View Vacations",primary:"#1B75BC",accent:"#E87722",logo:"branding/logos/coastal-view.png"},
+  "atlantic-resort-group":{name:"Atlantic Resort Group",primary:"#1A1A1A",accent:"#FFFFFF",logo:"branding/logos/atlantic-resort-group.png"},
+  "bender-realty":{name:"Bender Realty",primary:"#1B7EC1",accent:"#F7941D",logo:"branding/logos/bender-realty.png"},
+  "booe-realty":{name:"Booe Realty",primary:"#1A1A1A",accent:"#FFFFFF",logo:"branding/logos/booe-realty.png"},
+  "sea-star-realty":{name:"Sea Star Realty",primary:"#1C3A5C",accent:"#D4AF6B",logo:"branding/logos/sea-star-realty.jpg"},
+  "benchmark-management":{name:"Benchmark Management",primary:"#2B4080",accent:"#B8933A",logo:"branding/logos/benchmark-management.png"},
+  "rent-on-your-terms":{name:"Rent on Your Terms",primary:"#AD514B",accent:"#5F6B72",logo:"branding/logos/rent-on-your-terms.png"},
+  "monarch":{name:"Monarch (HQ)",primary:"#141414",accent:"#E0B43C",logo:"branding/logos/monarch.png"}
+};
+
+const sw = document.getElementById('brandSwitcher');
+Object.keys(THEMES).forEach(function(k){ const o=document.createElement('option'); o.value=k; o.textContent=THEMES[k].name; sw.appendChild(o); });
+
+function applyBrand(k){
+  const t=THEMES[k];
+  document.documentElement.style.setProperty('--brand',t.primary);
+  document.documentElement.style.setProperty('--accent',t.accent);
+  const img=document.getElementById('brandLogo');
+  if(t.logo){ img.src=t.logo; img.style.display=''; img.onerror=function(){img.style.display='none';}; }
+  else { img.style.display='none'; }
+}
+sw.addEventListener('change',function(){applyBrand(this.value)});
+
+function go(s){
+  document.querySelectorAll('.nav-item').forEach(function(n){n.classList.toggle('active',n.dataset.s===s)});
+  document.querySelectorAll('.screen').forEach(function(x){x.classList.toggle('active',x.id===s)});
+  const titles={dash:'Dashboard',shop:'Shopping list',orders:'Orders',recv:'Receiving',counts:'Inventory',cat:'Catalog & pars',admin:'Admin'};
+  document.getElementById('pageTitle').textContent=titles[s]||'';
+  if(s==='orders'){document.getElementById('ordersList').style.display='';document.getElementById('orderDetail').style.display='none';}
+}
+
+function toggleCompare(btn){
+  const row=btn.closest('tr').nextElementSibling;
+  row.style.display = row.style.display==='none' ? '' : 'none';
+}
+
+const ORDERS={
+ 'O-1042':{vendor:'Costco',loc:'Main Warehouse',date:'6/15',po:'PO-2026-0142',status:'<span class="badge bg-red-100 text-red-700">Stale</span>',
+   lines:[['Toilet Paper — Charmin',6,21.99],['Paper Towels — Bounty',4,24.49]],
+   audit:['6/15 · Danny — created from shopping list','6/15 · Danny — PO assigned PO-2026-0142','6/20 · system — ⚠ stale flag raised (5 days past expected)'],
+   actions:'<button class="btn">Override stale</button> <button class="btn">Mark received</button>'},
+ 'O-1040':{vendor:'Amazon',loc:'Eden Lodge A',date:'6/27',po:'PO-EC-0218',status:'<span class="badge bg-blue-100 text-blue-700">Submitted</span>',
+   lines:[['K-Cups — Donut Shop',3,38.99],['Batteries — AA 24pk',2,17.99],['Dish Soap — Dawn',4,12.49]],
+   audit:['6/27 · Danny — created','6/27 · Danny — PO assigned PO-EC-0218'],
+   actions:'<button class="btn">Mark received</button>'},
+ 'O-1039':{vendor:"Sam's Club",loc:'Main Warehouse',date:'6/18',po:'PO-2026-0140',status:'<span class="badge bg-amber-100 text-amber-700">Partial</span>',
+   lines:[['Laundry Pods — Tide',4,19.98],['Trash Bags — Glad 13gal',6,24.98],['Paper Towels — Bulk Roll',4,28.49]],
+   audit:['6/18 · Danny — created','6/23 · Receiver — partial: 4/4 pods, 4/6 trash bags, 0/4 paper towels'],
+   actions:'<button class="btn btn-brand brand-bg">Receive shipment</button> <button class="btn">Close short</button>'},
+ 'O-1036':{vendor:'Amazon',loc:'Cabin 1',date:'6/12',po:'PO-2026-0139',status:'<span class="badge bg-emerald-100 text-emerald-700">Received</span>',
+   lines:[['Sponges — Scotch-Brite',2,14.49],['Batteries — AA 24pk',3,16.99]],
+   audit:['6/12 · Danny — created','6/19 · Receiver — full receive, closed (saved $3.00 on batteries)'],
+   actions:'<button class="btn">Reopen</button>'}
+};
+function showOrder(id){
+  const o=ORDERS[id]; let tot=0;
+  const rows=o.lines.map(function(l){tot+=l[1]*l[2];return '<tr><td>'+l[0]+'</td><td class="num">'+l[1]+'</td><td class="num">$'+l[2].toFixed(2)+'</td><td class="num">$'+(l[1]*l[2]).toFixed(2)+'</td></tr>';}).join('');
+  const aud=o.audit.map(function(a){return '<div style="font-size:12px;color:#64748b;padding:3px 0">'+a+'</div>';}).join('');
+  document.getElementById('orderDetail').innerHTML=
+    '<button class="btn mb-3" onclick="backToOrders()">← All orders</button>'+
+    '<div class="bg-white border border-slate-200 rounded-xl p-5">'+
+    '<div class="flex items-center gap-2 mb-1"><div class="font-semibold text-lg">'+id+'</div>'+o.status+'</div>'+
+    '<div class="text-xs text-slate-500 mb-4">'+o.vendor+' · '+o.loc+' · '+o.po+' · ordered '+o.date+'</div>'+
+    '<table class="dense w-full mb-4"><thead><tr><th>Item</th><th class="num">Qty</th><th class="num">Unit</th><th class="num">Total</th></tr></thead><tbody>'+rows+
+    '<tr><td colspan="3" class="num font-medium">Order total</td><td class="num font-medium">$'+tot.toFixed(2)+'</td></tr></tbody></table>'+
+    '<div class="text-sm font-medium mb-1">Audit trail</div>'+aud+
+    '<div class="mt-4">'+o.actions+'</div></div>';
+  document.getElementById('ordersList').style.display='none';
+  document.getElementById('orderDetail').style.display='';
+}
+function backToOrders(){document.getElementById('orderDetail').style.display='none';document.getElementById('ordersList').style.display='';}
+
+const SYS_BY_LOC={
+ 'Kahana':{'Toilet Paper — Charmin Ultra Soft':12,'Paper Towels — Bounty':18,'Dish Soap — Dawn 56oz':9,'Bath Towels — A1 White':40,'Shampoo — Hotel Mini 1oz':6,'Trash Bags — Glad 13gal':22,'K-Cups — Donut Shop 72ct':5},
+ 'Kihei':{'Toilet Paper — Charmin Ultra Soft':3,'Paper Towels — Bounty':7,'Dish Soap — Dawn 56oz':2,'Bath Towels — A1 White':55,'Shampoo — Hotel Mini 1oz':1,'Trash Bags — Glad 13gal':14,'K-Cups — Donut Shop 72ct':9}
+};
+let curLoc='Kahana';
+let SYS=SYS_BY_LOC[curLoc];
+function changeLoc(loc){curLoc=loc;SYS=SYS_BY_LOC[loc];renderInv();}
+let committed=[];
+function pickCount(){
+  const v=document.getElementById('countItem').value, card=document.getElementById('countCard');
+  if(!v){card.style.display='none';return;}
+  card.style.display='';
+  document.getElementById('sysQty').textContent=SYS[v];
+  document.getElementById('cInput').value=SYS[v];
+  updateVar();
+}
+function cAdj(d){const inp=document.getElementById('cInput');inp.value=Math.max(0,(parseInt(inp.value)||0)+d);updateVar();}
+function updateVar(){
+  const v=document.getElementById('countItem').value; if(!v)return;
+  const diff=(parseInt(document.getElementById('cInput').value)||0)-SYS[v];
+  document.getElementById('variance').textContent= diff===0?'matches system — no change':((diff>0?'+':'')+diff+' vs system → posts to ledger');
+}
+function commitCount(){
+  const sel=document.getElementById('countItem'), v=sel.value; if(!v)return;
+  const sys=SYS[v], cur=parseInt(document.getElementById('cInput').value)||0, diff=cur-sys;
+  committed.unshift(v+': '+sys+' → '+cur+(diff?(' ('+(diff>0?'+':'')+diff+')'):''));
+  SYS[v]=cur; var ir=INV.find(function(x){return x.item===v;}); if(ir)ir.last='today'; renderCommitted(); renderInv();
+  sel.value=''; document.getElementById('countCard').style.display='none';
+}
+function renderCommitted(){
+  const el=document.getElementById('committedList');
+  el.innerHTML = committed.length ? '<div style="font-size:11px;color:#94a3b8;margin:8px 0 4px">Committed today ('+committed.length+')</div>'+committed.map(function(c){return '<div style="font-size:12px;padding:4px 0;border-top:1px solid #f1f5f9">✓ '+c+'</div>';}).join('') : '';
+}
+
+document.body.insertAdjacentHTML('beforeend','<div id="oneOffModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:50;align-items:center;justify-content:center">'+
+  '<div style="background:#fff;border-radius:12px;padding:20px;width:420px">'+
+  '<div style="font-weight:500;margin-bottom:4px">Add one-off / non-catalog item</div>'+
+  '<div style="font-size:12px;color:#64748b;margin-bottom:12px">Buy something not in the catalog. Price-check it to shop around, or — if you already know where you\'re buying — skip the check and drop it straight on the list or into an order.</div>'+
+  '<input id="ooDesc" placeholder="Item description" style="width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:8px 10px;font-size:13px;margin-bottom:8px">'+
+  '<div style="display:flex;gap:8px;margin-bottom:8px"><input id="ooQty" type="number" min="1" value="1" placeholder="Qty" style="width:50%;border:1px solid #e2e8f0;border-radius:8px;padding:8px 10px;font-size:13px"><input id="ooCost" placeholder="Est. unit cost" style="width:50%;border:1px solid #e2e8f0;border-radius:8px;padding:8px 10px;font-size:13px"></div>'+
+  '<select id="ooVendor" style="width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:8px 10px;font-size:13px;margin-bottom:12px"><option value="">Vendor (optional)…</option><option>Amazon</option><option>Home Depot</option><option>Costco</option><option>Sam\'s Club</option><option>Walmart</option><option>HD Supply</option></select>'+
+  '<div style="display:flex;flex-direction:column;gap:8px">'+
+    '<button class="btn" style="width:100%" onclick="addOneOff(\'check\')">Price-check first (shop around)</button>'+
+    '<button class="btn" style="width:100%" onclick="addOneOff(\'list\')">Add to shopping list — skip check</button>'+
+    '<button class="btn btn-brand brand-bg" style="width:100%" onclick="addOneOff(\'order\')">Add straight to an order — skip check</button>'+
+    '<button class="btn" style="width:100%" onclick="closeOneOff()">Cancel</button>'+
+  '</div>'+
+  '<div style="font-size:11px;color:#94a3b8;margin-top:8px">The two "skip check" options are for when the vendor\'s already decided — no price check runs.</div>'+
+  '</div></div>');
+function openOneOff(){document.getElementById('oneOffModal').style.display='flex';}
+function closeOneOff(){document.getElementById('oneOffModal').style.display='none';}
+function addOneOff(mode){
+  const d=document.getElementById('ooDesc').value||'New one-off item';
+  const q=Math.max(1,parseInt(document.getElementById('ooQty').value)||1);
+  const v=document.getElementById('ooVendor').value;
+  SHOP.push({id:++SEQ,item:d,onhand:'—',onorder:0,par:'—',reorder:'—',qty:q,unit:'ea',suggested:q,vendor:v,price:(mode==='check'?'pending':'manual'),oneoff:true,ordered:(mode==='order'),sel:false});
+  closeOneOff(); go('shop'); renderShop();
+}
+
+const INV=[
+ {item:'Toilet Paper — Charmin Ultra Soft',cat:'Paper',par:8,reorder:4,last:'5/30'},
+ {item:'Paper Towels — Bounty',cat:'Paper',par:6,reorder:3,last:'6/12'},
+ {item:'Dish Soap — Dawn 56oz',cat:'Cleaning',par:6,reorder:3,last:'6/12'},
+ {item:'Bath Towels — A1 White',cat:'Linens',par:40,reorder:20,last:'4/02'},
+ {item:'Shampoo — Hotel Mini 1oz',cat:'Toiletries',par:3,reorder:2,last:'6/20'},
+ {item:'Trash Bags — Glad 13gal',cat:'Cleaning',par:4,reorder:2,last:'5/15'},
+ {item:'K-Cups — Donut Shop 72ct',cat:'F&B',par:4,reorder:2,last:'6/24'}
+];
+function renderInv(){
+  document.getElementById('invTable').innerHTML='<table class="dense w-full"><thead><tr><th>Item</th><th>Category</th><th class="num">On hand</th><th>Last counted</th><th></th></tr></thead><tbody>'+
+  INV.map(function(r,i){var oh=SYS[r.item];var low=(typeof oh==='number'&&oh<=r.reorder);return '<tr><td>'+r.item+'</td><td>'+r.cat+'</td><td class="num'+(low?' text-red-600 font-medium':'')+'">'+oh+'</td><td class="text-slate-500" style="font-size:12px">'+r.last+'</td><td><button class="btn" style="padding:2px 8px;font-size:12px" onclick="openCount(\''+r.item.replace(/'/g,"\\'")+'\')">update</button></td></tr>';}).join('')+
+  '</tbody></table>';
+}
+document.body.insertAdjacentHTML('beforeend','<div id="countModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:50;align-items:center;justify-content:center">'+
+  '<div style="width:360px;background:#fff;border-radius:24px;padding:16px">'+
+  '<div style="display:flex;align-items:center;margin-bottom:6px"><div style="flex:1;font-size:11px;color:#94a3b8;text-align:center">📱 Count session · phone</div><button onclick="closeCount()" style="border:none;background:none;cursor:pointer;font-size:15px;color:#94a3b8">✕</button></div>'+
+  '<div class="brand-bg" style="color:#fff;border-radius:12px;padding:12px;margin-bottom:12px"><div style="font-size:11px;opacity:.8">Count at</div><div style="font-weight:500"><span id="countLoc">Kahana</span></div></div>'+
+  '<div style="font-size:11px;color:#94a3b8;margin-bottom:4px">Item</div>'+
+  '<div style="display:flex;gap:6px;margin-bottom:8px"><select id="countItem" onchange="pickCount()" style="flex:1;border:1px solid #e2e8f0;border-radius:8px;padding:8px;font-size:13px"><option value="">Search / select item…</option><option>Toilet Paper — Charmin Ultra Soft</option><option>Paper Towels — Bounty</option><option>Dish Soap — Dawn 56oz</option><option>Bath Towels — A1 White</option><option>Shampoo — Hotel Mini 1oz</option><option>Trash Bags — Glad 13gal</option><option>K-Cups — Donut Shop 72ct</option></select><button class="btn" style="padding:6px 10px" title="scan">📷</button></div>'+
+  '<div id="countCard" style="display:none;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px"><span style="color:#64748b">System on-hand</span><span id="sysQty" style="font-weight:500">—</span></div><div style="display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:8px"><button class="btn" onclick="cAdj(-1)" style="padding:4px 14px;font-size:18px">−</button><input id="cInput" type="number" value="0" oninput="updateVar()" style="width:64px;text-align:center;border:1px solid #e2e8f0;border-radius:8px;padding:8px;font-size:16px"><button class="btn" onclick="cAdj(1)" style="padding:4px 14px;font-size:18px">+</button></div><div id="variance" style="text-align:center;font-size:11px;color:#94a3b8;margin-bottom:10px"></div><button class="btn btn-brand brand-bg" style="width:100%" onclick="commitCount()">Commit count</button></div>'+
+  '<div id="committedList"></div>'+
+  '</div></div>');
+function openCount(item){var lc=document.getElementById('invLoc');if(lc)document.getElementById('countLoc').textContent=lc.value;document.getElementById('countModal').style.display='flex';if(item){document.getElementById('countItem').value=item;pickCount();}}
+function closeCount(){document.getElementById('countModal').style.display='none';}
+
+let RECV=[
+ {id:'O-1042',vendor:'Costco',loc:'Kahana',po:'PO-2026-0142',date:'6/15',closed:false,
+   lines:[{item:'Toilet Paper — Charmin Ultra Soft',ordered:6,received:0},{item:'Paper Towels — Bounty',ordered:4,received:0}]},
+ {id:'O-1039',vendor:"Sam's Club",loc:'Kihei',po:'PO-2026-0140',date:'6/18',closed:false,
+   lines:[{item:'Laundry Pods — Tide',ordered:4,received:4},{item:'Trash Bags — Glad 13gal',ordered:6,received:4},{item:'Paper Towels — Bulk Roll',ordered:4,received:0}]},
+ {id:'O-1046',vendor:'Amazon',loc:'Kahana',po:'PO-MPS-0421',date:'6/22',closed:false,
+   lines:[{item:'K-Cups — Donut Shop 72ct',ordered:3,received:3},{item:'Batteries — AA 24pk',ordered:2,received:0}]},
+ {id:'O-1048',vendor:'HD Supply',loc:'Kihei',po:'PO-MPS-0423',date:'6/24',closed:false,
+   lines:[{item:'Shampoo — Hotel Mini 1oz 144ct',ordered:144,received:100}]}
+];
+function renderRecv(){
+  document.getElementById('recvCard').innerHTML=RECV.map(function(o,oi){
+    var allDone=o.lines.every(function(l){return l.received>=l.ordered;}), any=o.lines.some(function(l){return l.received>0;});
+    var status=o.closed?'<span class="badge bg-slate-200 text-slate-600">Closed — '+((o.closeReason||'canceled_by_vendor').replace(/_/g,' '))+'</span>':(o.reopened?'<span class="badge bg-sky-100 text-sky-700">Reopened</span>':(allDone?'<span class="badge bg-emerald-100 text-emerald-700">Received</span>':(any?'<span class="badge bg-amber-100 text-amber-700">Partial</span>':'<span class="badge bg-blue-100 text-blue-700">Awaiting delivery</span>')));
+    var rows=o.lines.map(function(l,li){
+      var rem=l.ordered-l.received;
+      if(o.reopened) return '<div class="flex justify-between items-center text-sm py-2 border-t border-slate-100"><div><div>'+l.item+'</div><div class="text-[11px] text-slate-400">correct received qty — logged</div></div><div class="flex items-center gap-2"><input id="c_'+oi+'_'+li+'" type="number" min="0" value="'+l.received+'" onchange="recvCorrect('+oi+','+li+',this.value)" style="width:54px;text-align:right;border:1px solid #e2e8f0;border-radius:6px;padding:3px 5px"><span class="text-[11px] text-slate-400">of '+l.ordered+'</span></div></div>';
+      if(rem<=0) return '<div class="flex justify-between items-center text-sm py-2 border-t border-slate-100"><span>'+l.item+' <span class="badge bg-emerald-100 text-emerald-700">received</span></span><span class="text-slate-500">'+l.received+' of '+l.ordered+'</span></div>';
+      if(o.closed) return '<div class="flex justify-between items-center text-sm py-2 border-t border-slate-100"><span>'+l.item+' <span class="badge bg-slate-200 text-slate-600">'+rem+' canceled</span></span><span class="text-slate-500">'+l.received+' of '+l.ordered+'</span></div>';
+      return '<div class="flex justify-between items-center text-sm py-2 border-t border-slate-100"><div><div>'+l.item+'</div><div class="text-[11px] text-slate-400">'+l.received+' of '+l.ordered+' received · '+rem+' remaining</div></div><div class="flex items-center gap-2"><span class="text-[11px] text-slate-400">receiving now</span><input id="r_in_'+oi+'_'+li+'" type="number" min="0" max="'+rem+'" value="'+rem+'" style="width:54px;text-align:right;border:1px solid #e2e8f0;border-radius:6px;padding:3px 5px"></div></div>';
+    }).join('');
+    var actions;
+    if(o.reopened) actions='<div class="text-[11px] text-sky-700 mt-3">Reopened — edit received above to fix a miscount; each change posts a correcting inventory delta and is logged.</div><div class="flex gap-2 mt-2"><button class="btn btn-brand brand-bg" onclick="recvReclose('+oi+')">Done correcting</button></div>';
+    else if(o.closed) actions='<div class="flex items-center gap-3 mt-3 flex-wrap"><span class="text-[11px] text-slate-400">Closed; unfilled balance canceled and logged.</span><button class="btn" onclick="recvReopen('+oi+')">Reopen</button></div>';
+    else if(allDone) actions='<div class="flex items-center gap-3 mt-3 flex-wrap"><span class="text-[11px] text-emerald-700">All items received — order auto-closed.</span><button class="btn" onclick="recvReopen('+oi+')">Reopen</button></div>';
+    else actions='<div class="flex gap-2 mt-4 flex-wrap"><button class="btn btn-brand brand-bg" onclick="recvAll('+oi+')">Receive all remaining</button><button class="btn" onclick="recvConfirm('+oi+')">Confirm what arrived</button><button class="btn" onclick="recvCancel('+oi+')">Cancel remaining items</button></div>';
+    var actLog=(o.activity&&o.activity.length)?'<div class="mt-3 pt-2" style="border-top:1px solid #f1f5f9"><div class="text-[11px] text-slate-400 mb-1">Activity</div>'+o.activity.map(function(a){return '<div class="text-[11px] text-slate-500">› '+a+'</div>';}).join('')+'</div>':'';
+    return '<div class="bg-white border border-slate-200 rounded-xl p-5 mb-4"><div class="flex items-center gap-2 mb-1"><div class="font-semibold">Order '+o.id+'</div>'+status+'</div><div class="text-xs text-slate-500 mb-3">'+o.vendor+' · '+o.loc+' · '+o.po+' · ordered '+o.date+'</div>'+rows+actions+actLog+'</div>';
+  }).join('')+'<div class="text-[11px] text-slate-400">Four examples in different states — all on the real <b>applyReceipt</b> logic. Edit "receiving now" + Confirm for a partial; Receive all for full; Cancel remaining to close the balance. A closed/received order can be <b>Reopened</b> (reason required) to correct a miscount via <b>correctReceivedQty</b>.</div>';
+}
+function recvEngLines(o){return o.lines.map(function(l,li){return {id:String(li),item_id:l.item,qty_ordered:l.ordered,unit_cost:(l.cost||0),already_received:l.received};});}
+function recvApply(o,receipt){
+  var res=ShoppingEngine.applyReceipt({order_status:'submitted',lines:recvEngLines(o),receipt:receipt});
+  var ship=[];
+  res.lines.forEach(function(rl){var li=parseInt(rl.order_line_id,10);if(rl.qty_received_now>0)ship.push(rl.qty_received_now+'× '+o.lines[li].item);o.lines[li].received=rl.qty_received_total;});
+  o.activity=o.activity||[];
+  if(ship.length)o.activity.unshift('Shipment received: '+ship.join(', '));
+  if(res.auto_closed){o.closed=true;o.closeReason='received_full';o.reopened=false;o.activity.unshift('Auto-closed on full receipt.');}
+  return res;
+}
+function recvAll(oi){var o=RECV[oi];recvApply(o,o.lines.map(function(l,li){return {order_line_id:String(li),qty_received:Math.max(0,l.ordered-l.received)};}));renderRecv();}
+function recvConfirm(oi){var o=RECV[oi];var receipt=o.lines.map(function(l,li){var el=document.getElementById('r_in_'+oi+'_'+li);return {order_line_id:String(li),qty_received:el?(parseInt(el.value)||0):0};});recvApply(o,receipt);renderRecv();}
+function recvCancel(oi){var o=RECV[oi];var r=ShoppingEngine.cancelRemaining('canceled_by_vendor');o.closed=true;o.closeReason=r.close_reason;o.reopened=false;o.activity=o.activity||[];o.activity.unshift('Canceled remaining — '+r.close_reason.replace(/_/g,' '));renderRecv();}
+function recvReopen(oi){var o=RECV[oi];var reason=prompt('Reason to reopen (required — logged to the audit trail):','');if(reason===null)return;var r=ShoppingEngine.reopenOrder({status:o.closed?'closed':'received',reason:reason,lines:o.lines.map(function(l){return {qty_ordered:l.ordered,qty_received:l.received};})});if(!r.ok){alert(r.error);return;}o.closed=false;o.closeReason=null;o.reopened=true;o.reopenReason=reason;o.activity=o.activity||[];o.activity.unshift('Reopened — '+reason);renderRecv();}
+function recvReclose(oi){var o=RECV[oi];o.reopened=false;if(o.lines.every(function(l){return l.received>=l.ordered;})){o.closed=true;o.closeReason='received_full';}renderRecv();}
+function recvCorrect(oi,li,val){var o=RECV[oi],l=o.lines[li];var r=ShoppingEngine.correctReceivedQty({qty_ordered:l.ordered,previous_received:l.received,corrected_received:parseInt(val)||0,reason:o.reopenReason||'miscount correction',allow_over:false});if(!r.ok){alert(r.error);renderRecv();return;}o.activity=o.activity||[];o.activity.unshift('Correction: '+l.item+' '+r.audit.from+' → '+r.audit.to+' ('+(r.delta>=0?'+':'')+r.delta+' on-hand)');l.received=r.qty_received;renderRecv();}
+const VENDOR_LIST=['Costco','Amazon',"Sam's Club",'Walmart','Home Depot','HD Supply','A1A'];
+const CATALOG=[
+ {item:'Toilet Paper — Charmin',cat:'Paper',pack:24,uom:'roll',increment:1,pieces:1,vendor:'Costco',vendors:['Costco','Amazon',"Sam's Club"],search:'Charmin Ultra Soft toilet paper 24 mega rolls',sku:'',lockPolicy:'none',subs:[],cost:21.99,gl:'6400-Supplies',status:'active',pars:{Kahana:{par:8,reorder:4},Kihei:{par:4,reorder:2}}},
+ {item:'Bath Towels — A1 White',cat:'Linens',pack:12,uom:'each',increment:1,pieces:1,vendor:'A1A',vendors:['A1A'],search:'A1 white bath towel 27x54',sku:'A1-BT-2754',lockPolicy:'brand',subs:['Riegel white bath towel 27x54'],cost:4.20,gl:'6410-Linens',status:'active',pars:{Kahana:{par:40,reorder:20},Kihei:{par:60,reorder:30}}},
+ {item:'Shampoo — Hotel Mini 1oz',cat:'Toiletries',pack:144,uom:'each',increment:1,pieces:1,vendor:'HD Supply',vendors:['HD Supply','Amazon'],search:'hotel mini shampoo 1oz 144ct',sku:'HD-SH-1OZ',lockPolicy:'sku',subs:[],cost:32.50,gl:'6420-Toiletries',status:'active',pars:{Kahana:{par:3,reorder:2},Kihei:{par:2,reorder:1}}}
+];
+let catLoc='Kahana';
+function lockBadge(p){return p==='brand'?'<span class="badge bg-violet-100 text-violet-700">brand-locked</span>':(p==='sku'?'<span class="badge bg-violet-100 text-violet-700">SKU-locked</span>':'<span class="badge bg-slate-100 text-slate-500">—</span>');}
+let parEdit=false;
+function setCatPar(i,v){CATALOG[i].pars[catLoc].par=Math.max(0,parseInt(v)||0);}
+function setCatReorder(i,v){CATALOG[i].pars[catLoc].reorder=Math.max(0,parseInt(v)||0);}
+function setCatSearch(i,v){CATALOG[i].search=v;}
+function setCatVendor(i,v){CATALOG[i].vendor=v;}
+function toggleParEdit(){parEdit=!parEdit;var b=document.getElementById('parEditBtn');b.textContent=parEdit?'Done':'Quick edit';b.className='btn'+(parEdit?' btn-brand brand-bg':'');renderCat();}
+function changeCatLoc(loc){catLoc=loc;renderCat();}
+function renderCat(){
+  var ni='style="width:48px;text-align:right;border:1px solid #e2e8f0;border-radius:6px;padding:2px 4px"';
+  document.getElementById('catTable').innerHTML='<table class="dense w-full"><thead><tr><th>Item</th><th>Category</th><th class="num">Pack</th><th>Preferred vendor</th><th class="num">Par ('+catLoc+')</th><th class="num">Reorder</th><th>Quality lock</th><th></th></tr></thead><tbody>'+
+  CATALOG.map(function(r,i){var p=r.pars[catLoc]||{par:0,reorder:0};var par=parEdit?'<input type="number" value="'+p.par+'" onchange="setCatPar('+i+',this.value)" '+ni+'>':p.par;var ro=parEdit?'<input type="number" value="'+p.reorder+'" onchange="setCatReorder('+i+',this.value)" '+ni+'>':p.reorder;var srch=parEdit?'<div style="margin-top:4px"><input type="text" value="'+r.search.replace(/"/g,'&quot;')+'" onchange="setCatSearch('+i+',this.value)" style="width:240px;border:1px solid #e2e8f0;border-radius:6px;padding:2px 6px;font-size:11px" placeholder="search term — applies to all locations"></div>':'<div style="font-size:11px;color:#94a3b8">🔎 '+r.search+'</div>';var ven=parEdit?'<select onchange="setCatVendor('+i+',this.value)" style="font-size:12px;border:1px solid #e2e8f0;border-radius:6px;padding:2px 4px">'+VENDOR_LIST.map(function(v){return '<option'+(v===r.vendor?' selected':'')+'>'+v+'</option>';}).join('')+'</select>':r.vendor;return '<tr><td>'+r.item+(r.status!=='active'?' <span class="badge bg-slate-100 text-slate-500">'+r.status+'</span>':'')+srch+'</td><td>'+r.cat+'</td><td class="num">'+r.pack+'</td><td>'+ven+'</td><td class="num">'+par+'</td><td class="num">'+ro+'</td><td>'+lockBadge(r.lockPolicy)+'</td><td><button class="btn" style="padding:2px 10px;font-size:12px" onclick="openItem('+i+')">Edit</button></td></tr>';}).join('')+'</tbody></table>';
+}
+document.body.insertAdjacentHTML('beforeend','<div id="itemModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:60;align-items:flex-start;justify-content:center;overflow:auto;padding:24px"><div id="itemModalInner" style="background:#fff;border-radius:12px;padding:20px;width:520px;max-width:92vw"></div></div>');
+function closeItem(){document.getElementById('itemModal').style.display='none';}
+function openItem(i){
+  var r=CATALOG[i];
+  var fi='style="width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:7px 9px;font-size:13px"', fn='style="width:70px;border:1px solid #e2e8f0;border-radius:8px;padding:6px 8px;font-size:13px"';
+  function L(t){return '<div style="font-size:11px;color:#94a3b8;margin:10px 0 3px">'+t+'</div>';}
+  var vopts=VENDOR_LIST.map(function(v){return '<option'+(v===r.vendor?' selected':'')+'>'+v+'</option>';}).join('');
+  var allow=VENDOR_LIST.map(function(v){return '<label style="display:inline-flex;align-items:center;gap:4px;font-size:12px;margin:2px 10px 2px 0;white-space:nowrap"><input type="checkbox" class="it_ven" value="'+v.replace(/"/g,'&quot;')+'" '+(r.vendors.indexOf(v)>=0?'checked':'')+'> '+v+'</label>';}).join('');
+  var lock='<select id="it_lock" '+fi+'><option value="none"'+(r.lockPolicy==='none'?' selected':'')+'>Price OK — buy cheapest match</option><option value="brand"'+(r.lockPolicy==='brand'?' selected':'')+'>Lock to brand</option><option value="sku"'+(r.lockPolicy==='sku'?' selected':'')+'>Lock to exact SKU</option></select>';
+  document.getElementById('itemModalInner').innerHTML=
+   '<div style="font-size:16px;font-weight:500">'+r.item+'</div><div style="font-size:12px;color:#64748b;margin-bottom:4px">Catalog item · edit details</div>'+
+   '<div style="display:flex;gap:12px"><div style="flex:1">'+L('Status')+'<select id="it_status" '+fi+'><option'+(r.status==='active'?' selected':'')+'>active</option><option'+(r.status==='discontinued'?' selected':'')+'>discontinued</option></select></div><div style="flex:1">'+L('Category')+'<input id="it_cat" value="'+r.cat+'" '+fi+'></div></div>'+
+   L('Preferred vendor')+'<select id="it_vendor" '+fi+'>'+vopts+'</select>'+
+   L('Approved vendors (allowlist — only these may supply this item)')+'<div style="border:1px solid #e2e8f0;border-radius:8px;padding:8px">'+allow+'</div>'+
+   L('Quality lock')+lock+
+   L('Price-check search term')+'<input id="it_search" value="'+r.search.replace(/"/g,'&quot;')+'" '+fi+'>'+
+   L('Canonical SKU / ASIN (used when locked to SKU)')+'<input id="it_sku" value="'+(r.sku||'').replace(/"/g,'&quot;')+'" '+fi+' placeholder="e.g. B07XYZ…">'+
+   L('Approved substitutions (one per line — offered only if the primary is unavailable)')+'<textarea id="it_subs" rows="2" '+fi+'>'+r.subs.join('\n')+'</textarea>'+
+   L('Pars for '+catLoc+' &amp; pack (most pack fields auto-fill from the product bought)')+'<div style="display:flex;gap:10px;flex-wrap:wrap"><div><div style="font-size:10px;color:#94a3b8">Par</div><input id="it_par" type="number" value="'+r.pars[catLoc].par+'" '+fn+'></div><div><div style="font-size:10px;color:#94a3b8">Reorder</div><input id="it_reorder" type="number" value="'+r.pars[catLoc].reorder+'" '+fn+'></div><div><div style="font-size:10px;color:#94a3b8">Pack</div><input id="it_pack" type="number" value="'+r.pack+'" '+fn+'></div><div><div style="font-size:10px;color:#94a3b8">Order incr.</div><input id="it_inc" type="number" value="'+r.increment+'" '+fn+'></div><div><div style="font-size:10px;color:#94a3b8">Pieces/unit</div><input id="it_pieces" type="number" value="'+r.pieces+'" '+fn+'></div><div><div style="font-size:10px;color:#94a3b8">UoM</div><input id="it_uom" value="'+r.uom+'" '+fn+'></div></div>'+
+   '<div style="display:flex;gap:12px"><div style="flex:1">'+L('Last cost ($)')+'<input id="it_cost" value="'+r.cost+'" '+fi+'></div><div style="flex:1">'+L('GL code')+'<input id="it_gl" value="'+(r.gl||'')+'" '+fi+'></div></div>'+
+   '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px"><button class="btn" onclick="closeItem()">Cancel</button><button class="btn btn-brand brand-bg" onclick="saveItem('+i+')">Save changes</button></div>';
+  document.getElementById('itemModal').style.display='flex';
+}
+function saveItem(i){
+  var r=CATALOG[i], g=function(id){return document.getElementById(id);};
+  r.status=g('it_status').value; r.cat=g('it_cat').value; r.vendor=g('it_vendor').value;
+  r.vendors=Array.prototype.slice.call(document.querySelectorAll('.it_ven:checked')).map(function(c){return c.value;});
+  r.lockPolicy=g('it_lock').value; r.search=g('it_search').value; r.sku=g('it_sku').value;
+  r.subs=g('it_subs').value.split('\n').map(function(s){return s.trim();}).filter(Boolean);
+  r.pars[catLoc].par=Math.max(0,parseInt(g('it_par').value)||0); r.pars[catLoc].reorder=Math.max(0,parseInt(g('it_reorder').value)||0);
+  r.pack=Math.max(1,parseInt(g('it_pack').value)||1); r.increment=Math.max(1,parseInt(g('it_inc').value)||1);
+  r.pieces=Math.max(1,parseInt(g('it_pieces').value)||1); r.uom=g('it_uom').value; r.cost=g('it_cost').value; r.gl=g('it_gl').value;
+  closeItem(); renderCat();
+}
+renderInv();
+renderRecv();
+renderCat();
+renderCommitted();
+
+const VENDORS=['Costco','Amazon',"Sam's Club",'Walmart','Home Depot','HD Supply'];
+let SEQ=10;
+const SHOP_SEED=[
+  {id:1,item:'Toilet Paper — Charmin Ultra Soft',onhand:2,onorder:0,par:8,reorder:4,qty:1,unit:'pk (24)',suggested:1,vendor:'Costco',price:'ok',sel:false},
+  {id:2,item:'Paper Towels — Bounty',onhand:3,onorder:12,eta:'6/24',par:6,reorder:3,qty:0,unit:'pk (12)',suggested:0,vendor:'Costco',price:'inbound',sel:false},
+  {id:3,item:'K-Cups — Donut Shop 72ct',onhand:1,onorder:0,par:4,reorder:2,qty:1,unit:'ea',suggested:1,vendor:'Amazon',price:'cheaper',sel:false,alts:[{v:"Sam's Club",p:'$35.99',tag:'<span class="badge bg-emerald-100 text-emerald-700">cheapest</span>'},{v:'Amazon',p:'$38.99',tag:'<span class="badge bg-slate-100 text-slate-500">current</span>'},{v:'Walmart',p:'$41.49',tag:''}]},
+  {id:4,item:'Dish Soap — Dawn 56oz',onhand:4,onorder:0,par:6,reorder:3,qty:2,unit:'ea',suggested:2,vendor:'Amazon',price:'ok',sel:false},
+  {id:5,item:'Light Bulbs — LED A19 8pk',oneoff:true,onhand:'—',onorder:0,par:'—',reorder:'—',qty:2,unit:'pk (8)',suggested:2,vendor:'Home Depot',price:'pending',sel:false}
+];
+let SHOP=JSON.parse(JSON.stringify(SHOP_SEED));
+function engineShop(){SHOP.forEach(function(it){if(typeof it.onhand!=='number')return;var s=ShoppingEngine.suggest({id:String(it.id),name:it.item,status:'active'},{par:Number(it.par)||0,reorder_point:Number(it.reorder)||0},{on_hand:Number(it.onhand)||0,on_order_open:Number(it.onorder)||0,options:[{vendor_id:it.vendor||'v',vendor_name:it.vendor||'',pack_size:1,pack_price:1,source:'manual',confidence:1}]});it.suggested=s.need_units;if(s.flags.indexOf('inbound_covers')>=0&&it.price!=='cheaper')it.price='inbound';});}
+engineShop();
+function removeSelected(){var n=SHOP.filter(function(x){return x.sel;}).length;if(!n){alert('Tick the items you want to remove first.');return;}if(confirm('Remove '+n+' item'+(n>1?'s':'')+' from this shopping list? You can bring them back with "Populate from on-hand".')){SHOP=SHOP.filter(function(x){return !x.sel;});renderShop();}}
+function populateShop(){SHOP=JSON.parse(JSON.stringify(SHOP_SEED));engineShop();renderShop();}
+function setVendor(i,v){SHOP[i].vendor=v;SHOP[i].open=false;renderShop();}
+function setQty(i,v){SHOP[i].qty=Math.max(0,parseInt(v)||0);}
+function toggleRow(i){SHOP[i].open=!SHOP[i].open;renderShop();}
+function selAll(vn,ch){SHOP.forEach(function(it){if((it.vendor||'')===vn)it.sel=ch;});renderShop();}
+function rowSel(i,ch){SHOP[i].sel=ch;renderShop();}
+function toggleAll(){const all=SHOP.every(function(it){return it.sel;});SHOP.forEach(function(it){it.sel=!all;});renderShop();}
+function splitItem(i){
+  const it=SHOP[i], p=SHOP.findIndex(function(x){return x.splitParent===it.id;});
+  if(p>=0){SHOP.splice(p,1);it.split=false;}
+  else{const oi=SHOP.findIndex(function(x){return x.id===it.id;});
+    SHOP.splice(oi+1,0,Object.assign({},it,{id:++SEQ,vendor:'',qty:0,sel:false,open:false,alts:undefined,price:'pending',splitParent:it.id}));
+    it.split=true;}
+  renderShop();
+}
+function removeSplit(i){const par=SHOP.find(function(x){return x.id===SHOP[i].splitParent;});if(par)par.split=false;SHOP.splice(i,1);renderShop();}
+function renderShop(){
+  const groups={}; SHOP.forEach(function(it,i){const k=it.vendor||'__none';(groups[k]=groups[k]||[]).push(i);});
+  const keys=Object.keys(groups).sort(function(a,b){return a==='__none'?-1:(b==='__none'?1:0);});
+  let html='';
+  keys.forEach(function(vn){
+    const idxs=groups[vn], none=vn==='__none', vnE=vn.replace(/'/g,"\\'");
+    html+='<div class="bg-white border border-slate-200 rounded-xl overflow-hidden mb-4'+(none?' ring-1 ring-amber-300':'')+'">'+
+      '<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:'+(none?'#fffbeb':'#f8fafc')+';border-bottom:1px solid #e2e8f0">'+
+      (none?'<span style="font-weight:500;font-size:13px;color:#b45309">⚠ Choose a supplier</span>':'<input type="checkbox"'+(idxs.every(function(i){return SHOP[i].sel;})?' checked':'')+' onclick="selAll(\''+vnE+'\',this.checked)"> <span style="font-weight:500;font-size:13px">'+vn+'</span>')+
+      '<span style="font-size:12px;color:#94a3b8">'+idxs.length+' item'+(idxs.length>1?'s':'')+'</span>'+
+      '<div style="flex:1"></div>'+
+      (none?'':'<button class="btn btn-brand brand-bg" style="padding:3px 10px">Create order</button>')+'</div>'+
+      '<table class="dense w-full"><thead><tr><th></th><th>Item</th><th class="num">On hand</th><th class="num">On order</th><th class="num">Par</th><th class="num">Reorder</th><th>Order qty</th><th>Vendor · price</th></tr></thead><tbody>';
+    idxs.forEach(function(i){
+      const it=SHOP[i];
+      const opts=(it.vendor?'':'<option value="" selected>Select supplier…</option>')+VENDORS.map(function(v){return '<option'+(v===it.vendor?' selected':'')+'>'+v+'</option>';}).join('');
+      const vsel='<select onchange="setVendor('+i+',this.value)" style="font-size:12px;border:1px solid #e2e8f0;border-radius:6px;padding:2px 4px">'+opts+'</select>';
+      let pb='';
+      if(it.price==='ok')pb=' <span class="badge bg-emerald-100 text-emerald-700">ok</span>';
+      else if(it.price==='cheaper')pb=' <button class="badge bg-sky-100 text-sky-700" style="border:none;cursor:pointer" onclick="toggleRow('+i+')">compare ▾</button>';
+      else if(it.price==='inbound')pb=' <button class="btn" style="padding:2px 8px">Skip cycle</button>';
+      else if(it.price==='pending')pb=' <span class="badge bg-slate-100 text-slate-500">price-check</span>';
+      else if(it.price==='manual')pb=' <span class="badge bg-slate-100 text-slate-600">manual price</span>';
+      const oneoff=it.oneoff?' <span class="badge bg-slate-100 text-slate-600">one-off</span>':'';
+      const splitTag=(it.split||it.splitParent)?' <span class="badge bg-purple-100 text-purple-700">split</span>':'';
+      const ordTag=it.ordered?' <span class="badge bg-blue-100 text-blue-700">→ order</span>':'';
+      const eta=it.eta?'<div style="font-size:11px;color:#b45309">inbound '+it.onorder+' · arrives '+it.eta+'</div>':'';
+      const qtyCell='<input type="number" value="'+it.qty+'" min="0" onchange="setQty('+i+',this.value)" style="width:46px;text-align:right;border:1px solid #e2e8f0;border-radius:6px;padding:2px 4px"> <span style="font-size:10px;color:#94a3b8">'+it.unit+' · sug '+it.suggested+'</span>';
+      const actBtn=it.splitParent?' <button class="btn" style="padding:1px 6px;font-size:11px" onclick="removeSplit('+i+')">remove</button>':' <button class="btn" style="padding:1px 6px;font-size:11px" onclick="splitItem('+i+')">'+(it.split?'unsplit':'split')+'</button>';
+      html+='<tr'+(it.price==='inbound'?' style="background:#fffbeb"':'')+'><td><input type="checkbox" '+(it.sel?'checked':'')+' onclick="rowSel('+i+',this.checked)"></td>'+
+        '<td>'+it.item+oneoff+splitTag+ordTag+eta+'</td><td class="num">'+it.onhand+'</td><td class="num">'+it.onorder+'</td><td class="num">'+it.par+'</td><td class="num">'+it.reorder+'</td><td>'+qtyCell+'</td><td>'+vsel+pb+actBtn+'</td></tr>';
+      if(it.alts&&it.open){
+        html+='<tr><td></td><td colspan="7" style="padding:0 10px 12px"><div style="background:#f1f5f9;border-radius:8px;padding:10px">'+
+          '<div style="display:flex;margin-bottom:6px"><div style="flex:1;font-size:12px;color:#64748b">Price-check · cached 6/24 · pick a vendor to move it to that section</div><button class="btn" style="padding:2px 8px">↻ Refresh</button></div>'+
+          it.alts.map(function(a){var aE=a.v.replace(/'/g,"\\'");return '<label style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:13px"><input type="radio" name="alt'+i+'" '+(a.v===it.vendor?'checked':'')+' onchange="setVendor('+i+',\''+aE+'\')"> '+a.v+' — '+a.p+' '+a.tag+' <a href="#" style="color:#2563eb;font-size:12px;margin-left:auto">view item ↗</a></label>';}).join('')+
+          '</div></td></tr>';
+      }
+    });
+    html+='</tbody></table></div>';
+  });
+  document.getElementById('shopGroups').innerHTML=html;
+}
+renderShop();
+document.querySelectorAll('.nav-item').forEach(function(n){n.addEventListener('click',function(){go(n.dataset.s)})});
+
+sw.value="my-perfect-stays"; applyBrand("my-perfect-stays");
+</script>
+</body>
+</html>
