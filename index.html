@@ -46,7 +46,7 @@
       <a class="nav-item" data-s="admin"><span>âš™ï¸</span> Admin</a>
     </nav>
     <div class="px-4 py-3 text-white/60 text-xs border-t border-white/10">Danny Meister Â· Purchaser</div>
-    <div class="px-4 pb-3 text-white/40 text-[10px] leading-tight" title="Deploy version â€” if this doesn't match the latest deploy, you're seeing a cached page (hard-refresh: Ctrl+Shift+R)">build <span id="buildStamp"><!--BUILD-->20260702-134628 (223387e)<!--/BUILD--></span></div>
+    <div class="px-4 pb-3 text-white/40 text-[10px] leading-tight" title="Deploy version â€” if this doesn't match the latest deploy, you're seeing a cached page (hard-refresh: Ctrl+Shift+R)">build <span id="buildStamp"><!--BUILD-->20260702-135002 (014d140)<!--/BUILD--></span></div>
   </aside>
 
   <div class="flex-1 flex flex-col min-w-0">
@@ -1291,26 +1291,61 @@ function addVendor(){
   renderAdmin();
 }
 function toggleLocActive(i){LOCATIONS[i].active=!LOCATIONS[i].active;renderAdmin();}
+// Removal rule (matches the item-archive decision): anything with history gets
+// DEACTIVATED (kept for audit/reporting), hard-remove is for records never
+// used. The prototype hard-removes in-memory; the real app enforces the rule.
+function removeLocation(i){
+  var l=LOCATIONS[i];
+  if(!window.confirm('Remove location "'+l.name+'"?\n\nPars for it are deleted. In the real app a location with order/inventory history can only be deactivated.'))return;
+  LOCATIONS.splice(i,1);
+  CATALOG.forEach(function(r){delete r.pars[l.name];});
+  delete SYS_BY_LOC[l.name];
+  ['invLoc','catLoc','shopLoc'].forEach(function(id){var s=document.getElementById(id);if(!s)return;[...s.options].forEach(function(o){if(o.textContent===l.name)o.remove();});});
+  if(curLoc===l.name&&LOCATIONS.length){changeLoc(LOCATIONS[0].name);}
+  if(catLoc===l.name&&LOCATIONS.length){changeCatLoc(LOCATIONS[0].name);}
+  renderAdmin();renderCat();
+}
+function removeVendor(i){
+  var v=ADMIN_VENDORS[i];
+  if(!window.confirm('Remove vendor "'+v.name+'"?\n\nCatalog items preferring it keep their setting until reassigned. In the real app a vendor with order history can only be unapproved/deactivated.'))return;
+  ADMIN_VENDORS.splice(i,1);
+  var ix=VENDOR_LIST.indexOf(v.name);if(ix>=0)VENDOR_LIST.splice(ix,1);
+  renderAdmin();
+}
+function removeUser(i){
+  var u=ADMIN_USERS[i];
+  if(u.monarch&&ADMIN_USERS.filter(function(x){return x.monarch;}).length===1){alert('Cannot remove the last Monarch Admin.');return;}
+  if(!window.confirm('Remove user "'+u.name+'"?\n\nIn the real app their audit history is kept; the account is deactivated.'))return;
+  ADMIN_USERS.splice(i,1);renderAdmin();
+}
+function removeBrand(code){
+  if(sw.value===code){alert('Switch to another brand first â€” you are viewing this one.');return;}
+  var t=THEMES[code];
+  if(!window.confirm('Remove brand "'+t.name+'"?\n\nIn the real app a brand with any history is deactivated (kept for reporting), never hard-deleted.'))return;
+  delete THEMES[code];
+  [...sw.options].forEach(function(o){if(o.value===code)o.remove();});
+  renderAdmin();
+}
 
 const numIn='style="width:52px;text-align:right;border:1px solid #e2e8f0;border-radius:6px;padding:2px 4px"';
 function renderAdmin(){
   var ni=numIn;
   document.getElementById('admLocTable').innerHTML='<table class="dense w-full"><thead><tr><th>Location</th><th>Type</th><th class="num">Pars set</th><th>Status</th><th></th></tr></thead><tbody>'+
-   LOCATIONS.map(function(l,i){var pars=CATALOG.filter(function(r){return r.pars[l.name];}).length;return '<tr'+(l.active?'':' style="opacity:.5"')+'><td>'+l.name+'</td><td class="text-slate-500">'+l.type+'</td><td class="num">'+pars+' / '+CATALOG.length+'</td><td>'+(l.active?'<span class="badge bg-emerald-100 text-emerald-700">active</span>':'<span class="badge bg-slate-100 text-slate-500">inactive</span>')+'</td><td><button class="btn" style="padding:1px 8px;font-size:11px" onclick="toggleLocActive('+i+')">'+(l.active?'deactivate':'activate')+'</button></td></tr>';}).join('')+
+   LOCATIONS.map(function(l,i){var pars=CATALOG.filter(function(r){return r.pars[l.name];}).length;return '<tr'+(l.active?'':' style="opacity:.5"')+'><td>'+l.name+'</td><td class="text-slate-500">'+l.type+'</td><td class="num">'+pars+' / '+CATALOG.length+'</td><td>'+(l.active?'<span class="badge bg-emerald-100 text-emerald-700">active</span>':'<span class="badge bg-slate-100 text-slate-500">inactive</span>')+'</td><td style="white-space:nowrap"><button class="btn" style="padding:1px 8px;font-size:11px" onclick="toggleLocActive('+i+')">'+(l.active?'deactivate':'activate')+'</button> <button class="btn" style="padding:1px 8px;font-size:11px;color:#dc2626" onclick="removeLocation('+i+')" title="deactivate instead if it has history">remove</button></td></tr>';}).join('')+
    '</tbody></table>';
   document.getElementById('admVendorTable').innerHTML='<table class="dense w-full"><thead><tr><th>Vendor</th><th>Approved</th><th class="num" title="typical lead time â€” drives expected delivery">Expect (d)</th><th class="num" title="stale after this many days">Stale @ (d)</th><th>Capacity</th></tr></thead><tbody>'+
-   ADMIN_VENDORS.map(function(v,i){return '<tr><td>'+v.name+'</td><td><input type="checkbox" '+(v.approved?'checked':'')+' onchange="setVendorApproved('+i+',this.checked)"></td><td class="num"><input type="number" value="'+v.expected+'" onchange="setVendorNum('+i+',\'expected\',this.value)" '+ni+'></td><td class="num"><input type="number" value="'+v.max+'" onchange="setVendorNum('+i+',\'max\',this.value)" '+ni+'></td><td><select onchange="setVendorCap('+i+',this.value)" style="font-size:12px;border:1px solid #e2e8f0;border-radius:6px;padding:2px 4px"><option'+(v.capacity==='normal'?' selected':'')+'>normal</option><option'+(v.capacity==='strained'?' selected':'')+'>strained</option><option'+(v.capacity==='behind'?' selected':'')+'>behind</option></select> '+capBadge(v.capacity)+'</td></tr>';}).join('')+
+   ADMIN_VENDORS.map(function(v,i){return '<tr><td>'+v.name+'</td><td><input type="checkbox" '+(v.approved?'checked':'')+' onchange="setVendorApproved('+i+',this.checked)"></td><td class="num"><input type="number" value="'+v.expected+'" onchange="setVendorNum('+i+',\'expected\',this.value)" '+ni+'></td><td class="num"><input type="number" value="'+v.max+'" onchange="setVendorNum('+i+',\'max\',this.value)" '+ni+'></td><td style="white-space:nowrap"><select onchange="setVendorCap('+i+',this.value)" style="font-size:12px;border:1px solid #e2e8f0;border-radius:6px;padding:2px 4px"><option'+(v.capacity==='normal'?' selected':'')+'>normal</option><option'+(v.capacity==='strained'?' selected':'')+'>strained</option><option'+(v.capacity==='behind'?' selected':'')+'>behind</option></select> '+capBadge(v.capacity)+' <button class="btn" style="padding:1px 8px;font-size:11px;color:#dc2626" onclick="removeVendor('+i+')" title="unapprove instead if it has order history">remove</button></td></tr>';}).join('')+
    '</tbody></table>';
   document.getElementById('admUserTable').innerHTML='<table class="dense w-full"><thead><tr><th>User</th><th>Sign-in</th><th>Brand access Â· role</th><th></th></tr></thead><tbody>'+
    ADMIN_USERS.map(function(u,i){
      var chips = u.monarch
        ? '<span class="badge bg-violet-100 text-violet-700">Monarch Admin Â· all brands</span>'
        : (u.access.length? u.access.map(function(a){return '<span class="badge bg-slate-100 text-slate-600" style="margin:1px 2px 1px 0;display:inline-block">'+a.brand+' Â· <b>'+a.role+'</b></span>';}).join('') : '<span class="badge bg-red-100 text-red-700">no access</span>');
-     return '<tr><td>'+u.name+'<div style="font-size:11px;color:#94a3b8">'+u.email+'</div></td><td>'+(u.auth==='sso'?'<span class="badge bg-sky-100 text-sky-700">Google SSO</span>':'<span class="badge bg-amber-100 text-amber-700">external email</span>')+'</td><td>'+chips+'</td><td><button class="btn" style="padding:2px 10px;font-size:12px" onclick="openUser('+i+')">Edit</button></td></tr>';
+     return '<tr><td>'+u.name+'<div style="font-size:11px;color:#94a3b8">'+u.email+'</div></td><td>'+(u.auth==='sso'?'<span class="badge bg-sky-100 text-sky-700">Google SSO</span>':'<span class="badge bg-amber-100 text-amber-700">external email</span>')+'</td><td>'+chips+'</td><td style="white-space:nowrap"><button class="btn" style="padding:2px 10px;font-size:12px" onclick="openUser('+i+')">Edit</button> <button class="btn" style="padding:2px 8px;font-size:12px;color:#dc2626" onclick="removeUser('+i+')" title="account is deactivated in the real app; audit history kept">remove</button></td></tr>';
    }).join('')+
    '</tbody></table>';
   document.getElementById('admBrandTable').innerHTML='<table class="dense w-full"><thead><tr><th>Brand</th><th>Theme</th><th>Status</th></tr></thead><tbody>'+
-   Object.keys(THEMES).map(function(k){var t=THEMES[k];var cur=(sw.value===k);return '<tr'+(cur?' style="background:#f8fafc"':'')+'><td>'+t.name+(cur?' <span class="badge bg-sky-100 text-sky-700">current</span>':'')+'<div style="font-size:11px;color:#94a3b8">'+k+'</div></td><td><span style="display:inline-block;width:14px;height:14px;border-radius:4px;background:'+t.primary+';border:1px solid #e2e8f0;vertical-align:middle"></span> <span style="display:inline-block;width:14px;height:14px;border-radius:4px;background:'+t.accent+';border:1px solid #e2e8f0;vertical-align:middle"></span></td><td><span class="badge bg-emerald-100 text-emerald-700">active</span></td></tr>';}).join('')+
+   Object.keys(THEMES).map(function(k){var t=THEMES[k];var cur=(sw.value===k);return '<tr'+(cur?' style="background:#f8fafc"':'')+'><td>'+t.name+(cur?' <span class="badge bg-sky-100 text-sky-700">current</span>':'')+'<div style="font-size:11px;color:#94a3b8">'+k+'</div></td><td><span style="display:inline-block;width:14px;height:14px;border-radius:4px;background:'+t.primary+';border:1px solid #e2e8f0;vertical-align:middle"></span> <span style="display:inline-block;width:14px;height:14px;border-radius:4px;background:'+t.accent+';border:1px solid #e2e8f0;vertical-align:middle"></span></td><td style="white-space:nowrap"><span class="badge bg-emerald-100 text-emerald-700">active</span> <button class="btn" style="padding:1px 8px;font-size:11px;color:#dc2626" onclick="removeBrand(\''+k+'\')" title="brands with history are deactivated, never hard-deleted">remove</button></td></tr>';}).join('')+
    '</tbody></table>';
 }
 
