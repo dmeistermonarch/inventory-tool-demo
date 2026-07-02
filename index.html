@@ -46,7 +46,7 @@
       <a class="nav-item" data-s="admin"><span>âš™ï¸</span> Admin</a>
     </nav>
     <div class="px-4 py-3 text-white/60 text-xs border-t border-white/10">Danny Meister Â· Purchaser</div>
-    <div class="px-4 pb-3 text-white/40 text-[10px] leading-tight" title="Deploy version â€” if this doesn't match the latest deploy, you're seeing a cached page (hard-refresh: Ctrl+Shift+R)">build <span id="buildStamp"><!--BUILD-->20260702-140427 (975b527)<!--/BUILD--></span></div>
+    <div class="px-4 pb-3 text-white/40 text-[10px] leading-tight" title="Deploy version â€” if this doesn't match the latest deploy, you're seeing a cached page (hard-refresh: Ctrl+Shift+R)">build <span id="buildStamp"><!--BUILD-->20260702-141015 (9b2c40f)<!--/BUILD--></span></div>
   </aside>
 
   <div class="flex-1 flex flex-col min-w-0">
@@ -1290,6 +1290,23 @@ function addVendor(){
   renderAdmin();
 }
 function toggleLocActive(i){LOCATIONS[i].active=!LOCATIONS[i].active;renderAdmin();}
+// Rename keeps the location's IDENTITY â€” pars, on-hand, and order/count history
+// all stay attached (real DB: everything FKs the location id; name is a label).
+// This is the right move for "we relocated the whole warehouse": rename it,
+// nothing else changes. (Adding new + removing old would orphan history.)
+function renameLocation(i){
+  var l=LOCATIONS[i];
+  var name=window.prompt('New name for "'+l.name+'" (history, pars, and on-hand stay attached):',l.name);
+  if(!name)return; name=name.trim(); if(!name||name===l.name)return;
+  if(LOCATIONS.some(function(x,xi){return xi!==i&&x.name.toLowerCase()===name.toLowerCase();})){alert(name+' already exists.');return;}
+  var old=l.name; l.name=name;
+  CATALOG.forEach(function(r){ if(r.pars[old]){r.pars[name]=r.pars[old];delete r.pars[old];} });
+  if(SYS_BY_LOC[old]){SYS_BY_LOC[name]=SYS_BY_LOC[old];delete SYS_BY_LOC[old];}
+  ['invLoc','catLoc','shopLoc'].forEach(function(id){var s=document.getElementById(id);if(!s)return;[...s.options].forEach(function(o){if(o.textContent===old){o.textContent=name;}});});
+  if(curLoc===old){curLoc=name;SYS=SYS_BY_LOC[name];var iv=document.getElementById('invLoc');if(iv)iv.value=name;}
+  if(catLoc===old){catLoc=name;var cv=document.getElementById('catLoc');if(cv)cv.value=name;}
+  renderAdmin();renderCat();renderInv();
+}
 // Removal rule (matches the item-archive decision): anything with history gets
 // DEACTIVATED (kept for audit/reporting), hard-remove is for records never
 // used. The prototype hard-removes in-memory; the real app enforces the rule.
@@ -1330,7 +1347,7 @@ const numIn='style="width:52px;text-align:right;border:1px solid #e2e8f0;border-
 function renderAdmin(){
   var ni=numIn;
   document.getElementById('admLocTable').innerHTML='<table class="dense w-full"><thead><tr><th>Location</th><th>Type</th><th class="num">Pars set</th><th>Status</th><th></th></tr></thead><tbody>'+
-   LOCATIONS.map(function(l,i){var pars=CATALOG.filter(function(r){return r.pars[l.name];}).length;return '<tr'+(l.active?'':' style="opacity:.5"')+'><td>'+l.name+'</td><td class="text-slate-500">'+l.type+'</td><td class="num">'+pars+' / '+CATALOG.length+'</td><td>'+(l.active?'<span class="badge bg-emerald-100 text-emerald-700">active</span>':'<span class="badge bg-slate-100 text-slate-500">inactive</span>')+'</td><td style="white-space:nowrap"><button class="btn" style="padding:1px 8px;font-size:11px" onclick="toggleLocActive('+i+')">'+(l.active?'deactivate':'activate')+'</button> <button class="btn" style="padding:1px 8px;font-size:11px;color:#dc2626" onclick="removeLocation('+i+')" title="Monarch Admin only â€” site admins deactivate instead">remove</button></td></tr>';}).join('')+
+   LOCATIONS.map(function(l,i){var pars=CATALOG.filter(function(r){return r.pars[l.name];}).length;return '<tr'+(l.active?'':' style="opacity:.5"')+'><td>'+l.name+'</td><td class="text-slate-500">'+l.type+'</td><td class="num">'+pars+' / '+CATALOG.length+'</td><td>'+(l.active?'<span class="badge bg-emerald-100 text-emerald-700">active</span>':'<span class="badge bg-slate-100 text-slate-500">inactive</span>')+'</td><td style="white-space:nowrap"><button class="btn" style="padding:1px 8px;font-size:11px" onclick="renameLocation('+i+')" title="keeps all history/pars/on-hand â€” the right way to handle a full warehouse move">rename</button> <button class="btn" style="padding:1px 8px;font-size:11px" onclick="toggleLocActive('+i+')">'+(l.active?'deactivate':'activate')+'</button> <button class="btn" style="padding:1px 8px;font-size:11px;color:#dc2626" onclick="removeLocation('+i+')" title="Monarch Admin only â€” site admins deactivate instead">remove</button></td></tr>';}).join('')+
    '</tbody></table>';
   document.getElementById('admVendorTable').innerHTML='<table class="dense w-full"><thead><tr><th>Supplier <span style="font-weight:400;color:#94a3b8">(master)</span></th><th title="site team: do you buy from them?">Active (this brand)</th><th class="num" title="site team: typical lead time â€” drives expected delivery">Expect (d)</th><th class="num" title="site team: stale after this many days">Stale @ (d)</th><th></th></tr></thead><tbody>'+
    ADMIN_VENDORS.map(function(v,i){var inactive=!v.approved;return '<tr'+(inactive?' style="opacity:.45"':'')+'><td>'+v.name+(inactive?' <span class="badge bg-slate-100 text-slate-500">inactive here</span>':'')+'</td><td><input type="checkbox" '+(v.approved?'checked':'')+' onchange="setVendorApproved('+i+',this.checked)"></td><td class="num"><input type="number" value="'+v.expected+'" onchange="setVendorNum('+i+',\'expected\',this.value)" '+ni+'></td><td class="num"><input type="number" value="'+v.max+'" onchange="setVendorNum('+i+',\'max\',this.value)" '+ni+'></td><td><button class="btn" style="padding:1px 8px;font-size:11px;color:#dc2626" onclick="removeVendor('+i+')" title="Monarch Admin only â€” removes from the master list for ALL brands">remove</button></td></tr>';}).join('')+
