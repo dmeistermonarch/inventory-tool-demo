@@ -46,7 +46,7 @@
       <a class="nav-item" data-s="admin"><span>âš™ï¸</span> Admin</a>
     </nav>
     <div class="px-4 py-3 text-white/60 text-xs border-t border-white/10">Danny Meister Â· Purchaser</div>
-    <div class="px-4 pb-3 text-white/40 text-[10px] leading-tight" title="Deploy version â€” if this doesn't match the latest deploy, you're seeing a cached page (hard-refresh: Ctrl+Shift+R)">build <span id="buildStamp"><!--BUILD-->20260702-140028 (c280504)<!--/BUILD--></span></div>
+    <div class="px-4 pb-3 text-white/40 text-[10px] leading-tight" title="Deploy version â€” if this doesn't match the latest deploy, you're seeing a cached page (hard-refresh: Ctrl+Shift+R)">build <span id="buildStamp"><!--BUILD-->20260702-140427 (975b527)<!--/BUILD--></span></div>
   </aside>
 
   <div class="flex-1 flex flex-col min-w-0">
@@ -151,12 +151,12 @@
         <div class="grid grid-cols-2 gap-4 items-start">
 
           <div class="bg-white border border-slate-200 rounded-xl p-5">
-            <div class="flex items-center mb-3"><div class="flex-1"><div class="font-semibold text-slate-800">Locations</div><div class="text-xs text-slate-500">Warehouses &amp; storage for this brand. New locations copy par targets from a template location; on-hand starts at 0.</div></div><button class="btn btn-brand brand-bg" onclick="openAddLoc()">ï¼‹ Add location</button></div>
+            <div class="flex items-center mb-3"><div class="flex-1"><div class="font-semibold text-slate-800">Locations</div><div class="text-xs text-slate-500">Warehouses &amp; storage for this brand. New locations copy par targets from a template location; on-hand starts at 0. Site admins add + deactivate; <b>full removal is Monarch Admin only</b>.</div></div><button class="btn btn-brand brand-bg" onclick="openAddLoc()">ï¼‹ Add location</button></div>
             <div id="admLocTable"></div>
           </div>
 
           <div class="bg-white border border-slate-200 rounded-xl p-5">
-            <div class="flex items-center mb-3"><div class="flex-1"><div class="font-semibold text-slate-800">Vendors <span class="badge bg-sky-100 text-sky-700">this brand</span></div><div class="text-xs text-slate-500">Vendor settings are per-brand â€” even national vendors ship differently by site (Amazon â‰ˆ 2 wks to Hawaii). Lead times drive expected delivery + the stale flag.</div></div><button class="btn" onclick="addVendor()">ï¼‹ Add vendor</button></div>
+            <div class="flex items-center mb-3"><div class="flex-1"><div class="font-semibold text-slate-800">Suppliers</div><div class="text-xs text-slate-500"><b>Master list is Monarch-managed</b> (add/remove = Monarch Admin only). Site teams don't add suppliers â€” they <b>activate</b> the ones they buy from and set <b>their own</b> lead times (Amazon â‰ˆ 2 wks to Hawaii). A1 can sit on the list while a site simply leaves it inactive. Lead times drive expected delivery + the stale flag.</div></div><button class="btn" onclick="addVendor()" title="Monarch Admin only">ï¼‹ Add supplier</button></div>
             <div id="admVendorTable"></div>
           </div>
 
@@ -1295,7 +1295,7 @@ function toggleLocActive(i){LOCATIONS[i].active=!LOCATIONS[i].active;renderAdmin
 // used. The prototype hard-removes in-memory; the real app enforces the rule.
 function removeLocation(i){
   var l=LOCATIONS[i];
-  if(!window.confirm('Remove location "'+l.name+'"?\n\nPars for it are deleted. In the real app a location with order/inventory history can only be deactivated.'))return;
+  if(!window.confirm('Fully remove location "'+l.name+'"?\n\nMonarch Admin only (site admins deactivate instead). Pars for it are deleted. A location with order/inventory history can only be deactivated.'))return;
   LOCATIONS.splice(i,1);
   CATALOG.forEach(function(r){delete r.pars[l.name];});
   delete SYS_BY_LOC[l.name];
@@ -1306,7 +1306,7 @@ function removeLocation(i){
 }
 function removeVendor(i){
   var v=ADMIN_VENDORS[i];
-  if(!window.confirm('Remove vendor "'+v.name+'"?\n\nCatalog items preferring it keep their setting until reassigned. In the real app a vendor with order history can only be unapproved/deactivated.'))return;
+  if(!window.confirm('Remove supplier "'+v.name+'" from the MASTER list (all brands)?\n\nMonarch Admin only. Site teams should just deactivate it for their brand instead. Suppliers with order history are deactivated, not hard-deleted.'))return;
   ADMIN_VENDORS.splice(i,1);
   var ix=VENDOR_LIST.indexOf(v.name);if(ix>=0)VENDOR_LIST.splice(ix,1);
   renderAdmin();
@@ -1330,10 +1330,10 @@ const numIn='style="width:52px;text-align:right;border:1px solid #e2e8f0;border-
 function renderAdmin(){
   var ni=numIn;
   document.getElementById('admLocTable').innerHTML='<table class="dense w-full"><thead><tr><th>Location</th><th>Type</th><th class="num">Pars set</th><th>Status</th><th></th></tr></thead><tbody>'+
-   LOCATIONS.map(function(l,i){var pars=CATALOG.filter(function(r){return r.pars[l.name];}).length;return '<tr'+(l.active?'':' style="opacity:.5"')+'><td>'+l.name+'</td><td class="text-slate-500">'+l.type+'</td><td class="num">'+pars+' / '+CATALOG.length+'</td><td>'+(l.active?'<span class="badge bg-emerald-100 text-emerald-700">active</span>':'<span class="badge bg-slate-100 text-slate-500">inactive</span>')+'</td><td style="white-space:nowrap"><button class="btn" style="padding:1px 8px;font-size:11px" onclick="toggleLocActive('+i+')">'+(l.active?'deactivate':'activate')+'</button> <button class="btn" style="padding:1px 8px;font-size:11px;color:#dc2626" onclick="removeLocation('+i+')" title="deactivate instead if it has history">remove</button></td></tr>';}).join('')+
+   LOCATIONS.map(function(l,i){var pars=CATALOG.filter(function(r){return r.pars[l.name];}).length;return '<tr'+(l.active?'':' style="opacity:.5"')+'><td>'+l.name+'</td><td class="text-slate-500">'+l.type+'</td><td class="num">'+pars+' / '+CATALOG.length+'</td><td>'+(l.active?'<span class="badge bg-emerald-100 text-emerald-700">active</span>':'<span class="badge bg-slate-100 text-slate-500">inactive</span>')+'</td><td style="white-space:nowrap"><button class="btn" style="padding:1px 8px;font-size:11px" onclick="toggleLocActive('+i+')">'+(l.active?'deactivate':'activate')+'</button> <button class="btn" style="padding:1px 8px;font-size:11px;color:#dc2626" onclick="removeLocation('+i+')" title="Monarch Admin only â€” site admins deactivate instead">remove</button></td></tr>';}).join('')+
    '</tbody></table>';
-  document.getElementById('admVendorTable').innerHTML='<table class="dense w-full"><thead><tr><th>Vendor</th><th>Approved</th><th class="num" title="typical lead time â€” drives expected delivery">Expect (d)</th><th class="num" title="stale after this many days">Stale @ (d)</th><th></th></tr></thead><tbody>'+
-   ADMIN_VENDORS.map(function(v,i){return '<tr><td>'+v.name+'</td><td><input type="checkbox" '+(v.approved?'checked':'')+' onchange="setVendorApproved('+i+',this.checked)"></td><td class="num"><input type="number" value="'+v.expected+'" onchange="setVendorNum('+i+',\'expected\',this.value)" '+ni+'></td><td class="num"><input type="number" value="'+v.max+'" onchange="setVendorNum('+i+',\'max\',this.value)" '+ni+'></td><td><button class="btn" style="padding:1px 8px;font-size:11px;color:#dc2626" onclick="removeVendor('+i+')" title="unapprove instead if it has order history">remove</button></td></tr>';}).join('')+
+  document.getElementById('admVendorTable').innerHTML='<table class="dense w-full"><thead><tr><th>Supplier <span style="font-weight:400;color:#94a3b8">(master)</span></th><th title="site team: do you buy from them?">Active (this brand)</th><th class="num" title="site team: typical lead time â€” drives expected delivery">Expect (d)</th><th class="num" title="site team: stale after this many days">Stale @ (d)</th><th></th></tr></thead><tbody>'+
+   ADMIN_VENDORS.map(function(v,i){var inactive=!v.approved;return '<tr'+(inactive?' style="opacity:.45"':'')+'><td>'+v.name+(inactive?' <span class="badge bg-slate-100 text-slate-500">inactive here</span>':'')+'</td><td><input type="checkbox" '+(v.approved?'checked':'')+' onchange="setVendorApproved('+i+',this.checked)"></td><td class="num"><input type="number" value="'+v.expected+'" onchange="setVendorNum('+i+',\'expected\',this.value)" '+ni+'></td><td class="num"><input type="number" value="'+v.max+'" onchange="setVendorNum('+i+',\'max\',this.value)" '+ni+'></td><td><button class="btn" style="padding:1px 8px;font-size:11px;color:#dc2626" onclick="removeVendor('+i+')" title="Monarch Admin only â€” removes from the master list for ALL brands">remove</button></td></tr>';}).join('')+
    '</tbody></table>';
   document.getElementById('admUserTable').innerHTML='<table class="dense w-full"><thead><tr><th>User</th><th>Sign-in</th><th>Brand access Â· role</th><th></th></tr></thead><tbody>'+
    ADMIN_USERS.map(function(u,i){
