@@ -46,7 +46,7 @@
       <a class="nav-item" data-s="admin"><span>⚙️</span> Admin</a>
     </nav>
     <div class="px-4 py-3 text-white/60 text-xs border-t border-white/10">Danny Meister · Purchaser</div>
-    <div class="px-4 pb-3 text-white/40 text-[10px] leading-tight" title="Deploy version — if this doesn't match the latest deploy, you're seeing a cached page (hard-refresh: Ctrl+Shift+R)">build <span id="buildStamp"><!--BUILD-->20260702-142713 (5a6de06)<!--/BUILD--></span></div>
+    <div class="px-4 pb-3 text-white/40 text-[10px] leading-tight" title="Deploy version — if this doesn't match the latest deploy, you're seeing a cached page (hard-refresh: Ctrl+Shift+R)">build <span id="buildStamp"><!--BUILD-->20260702-155407 (c0ca6a0)<!--/BUILD--></span></div>
   </aside>
 
   <div class="flex-1 flex flex-col min-w-0">
@@ -97,7 +97,6 @@
           <button class="btn" onclick="alert('Price-checks all selected items in one batch (cached where fresh, live only where stale).')">Price-check selected</button>
           <button class="btn" onclick="removeSelected()">Remove selected</button>
           <button class="btn" onclick="openOneOff()">+ Add item / one-off</button>
-          <button class="btn btn-brand brand-bg" onclick="runWeeklyOrder()">⚡ Run weekly order</button>
         </div>
         <div id="shopGroups"></div>
         <div class="text-[11px] text-slate-400 mt-2">Change an item's vendor (or pick one in its price compare) to move it into that supplier's section. Each supplier section has a select-all for bulk actions — price-check or create the order for that vendor. On-order is shown beside on-hand so you can skip what's already inbound.</div>
@@ -990,10 +989,6 @@ function ordReopen(id){
 }
 
 // --- Shopping bulk actions ---
-function runWeeklyOrder(){
-  var n=0;SHOP.forEach(function(it){if(!it.ordered&&!it.skipped&&it.price!=='inbound'&&(it.vendor||'')!==''){it.sel=true;n++;}});
-  renderShop();mockNote('Weekly order: '+n+' suggested lines selected — review, then Create order per supplier.');
-}
 function createOrder(vn){
   var picked=SHOP.filter(function(it){return (it.vendor||'')===vn&&it.sel&&!it.ordered;});
   if(!picked.length){mockNote('Select at least one line for '+vn+' first.');return;}
@@ -1100,8 +1095,17 @@ function addOneOff(mode){
   const d=document.getElementById('ooDesc').value||'New one-off item';
   const q=Math.max(1,parseInt(document.getElementById('ooQty').value)||1);
   const v=document.getElementById('ooVendor').value;
-  SHOP.push({id:++SEQ,item:d,onhand:'—',onorder:0,par:'—',reorder:'—',qty:q,unit:'ea',suggested:q,vendor:v,price:(mode==='check'?'pending':'manual'),oneoff:true,ordered:(mode==='order'),sel:false});
+  // "Straight to an order" does NOT touch the shopping list — otherwise the same
+  // one-off could be ordered twice (once here, once from the list). It goes to
+  // Orders directly; the shopping list is only for things still being decided.
+  if(mode==='order'){
+    closeOneOff();
+    mockNote('"'+d+'" x'+q+' added straight to a'+(v?' '+v:' new')+' order — kept OFF the shopping list so it can\'t be double-ordered. Find it under Orders.');
+    return;
+  }
+  SHOP.push({id:++SEQ,item:d,onhand:'—',onorder:0,par:'—',reorder:'—',qty:q,unit:'ea',suggested:q,vendor:v,price:(mode==='check'?'pending':'manual'),oneoff:true,ordered:false,sel:false});
   closeOneOff(); go('shop'); renderShop();
+  mockNote('"'+d+'" added to the shopping list'+(mode==='check'?' — price-check pending':' (manual price)')+'.');
 }
 
 const INV=[
@@ -1119,8 +1123,8 @@ function renderInv(){
   '</tbody></table>';
 }
 document.body.insertAdjacentHTML('beforeend','<div id="countModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:50;align-items:center;justify-content:center">'+
-  '<div style="width:360px;background:#fff;border-radius:24px;padding:16px">'+
-  '<div style="display:flex;align-items:center;margin-bottom:6px"><div style="flex:1;font-size:11px;color:#94a3b8;text-align:center">📱 Count session · phone</div><button onclick="closeCount()" style="border:none;background:none;cursor:pointer;font-size:15px;color:#94a3b8">✕</button></div>'+
+  '<div style="width:360px;background:#fff;border-radius:12px;padding:16px">'+
+  '<div style="display:flex;align-items:center;margin-bottom:6px"><div style="flex:1;font-size:13px;font-weight:600;color:#334155">Update on-hand count</div><button onclick="closeCount()" style="border:none;background:none;cursor:pointer;font-size:15px;color:#94a3b8">✕</button></div>'+
   '<div class="brand-bg" style="color:#fff;border-radius:12px;padding:12px;margin-bottom:12px"><div style="font-size:11px;opacity:.8">Count at</div><div style="font-weight:500"><span id="countLoc">Kahana</span></div></div>'+
   '<div style="font-size:11px;color:#94a3b8;margin-bottom:4px">Item</div>'+
   '<div style="display:flex;gap:6px;margin-bottom:8px"><select id="countItem" onchange="pickCount()" style="flex:1;border:1px solid #e2e8f0;border-radius:8px;padding:8px;font-size:13px"><option value="">Search / select item…</option><option>Toilet Paper — Charmin Ultra Soft</option><option>Paper Towels — Bounty</option><option>Dish Soap — Dawn 56oz</option><option>Bath Towels — A1 White</option><option>Shampoo — Hotel Mini 1oz</option><option>Trash Bags — Glad 13gal</option><option>K-Cups — Donut Shop 72ct</option></select><button class="btn" style="padding:6px 10px" title="scan" onclick="mockNote(\'QR scanning arrives with the phone Walk + Count app — pick the item from the list for now.\')">📷</button></div>'+
@@ -1206,7 +1210,8 @@ function openItem(i){
   var allow=VENDOR_LIST.map(function(v){return '<label style="display:inline-flex;align-items:center;gap:4px;font-size:12px;margin:2px 10px 2px 0;white-space:nowrap"><input type="checkbox" class="it_ven" value="'+v.replace(/"/g,'&quot;')+'" '+(r.vendors.indexOf(v)>=0?'checked':'')+'> '+v+'</label>';}).join('');
   var lock='<select id="it_lock" '+fi+'><option value="none"'+(r.lockPolicy==='none'?' selected':'')+'>Price OK — buy cheapest match</option><option value="brand"'+(r.lockPolicy==='brand'?' selected':'')+'>Lock to brand</option><option value="sku"'+(r.lockPolicy==='sku'?' selected':'')+'>Lock to exact SKU</option></select>';
   document.getElementById('itemModalInner').innerHTML=
-   '<div style="font-size:16px;font-weight:500">'+r.item+'</div><div style="font-size:12px;color:#64748b;margin-bottom:4px">Catalog item · edit details</div>'+
+   '<div style="font-size:12px;color:#64748b;margin-bottom:4px">Catalog item · edit details</div>'+
+   L('Item name')+'<input id="it_name" value="'+r.item.replace(/"/g,'&quot;')+'" '+fi+' placeholder="e.g. Paper Towels — Bounty 12pk">'+
    '<div style="display:flex;gap:12px"><div style="flex:1">'+L('Status')+'<select id="it_status" '+fi+'><option'+(r.status==='active'?' selected':'')+'>active</option><option'+(r.status==='discontinued'?' selected':'')+'>discontinued</option></select></div><div style="flex:1">'+L('Category')+'<input id="it_cat" value="'+r.cat+'" '+fi+'></div></div>'+
    L('Preferred vendor')+'<select id="it_vendor" '+fi+'>'+vopts+'</select>'+
    L('Approved vendors (allowlist — only these may supply this item)')+'<div style="border:1px solid #e2e8f0;border-radius:8px;padding:8px">'+allow+'</div>'+
@@ -1221,6 +1226,7 @@ function openItem(i){
 }
 function saveItem(i){
   var r=CATALOG[i], g=function(id){return document.getElementById(id);};
+  r.item=(g('it_name').value||'').trim()||r.item;
   r.status=g('it_status').value; r.cat=g('it_cat').value; r.vendor=g('it_vendor').value;
   r.vendors=Array.prototype.slice.call(document.querySelectorAll('.it_ven:checked')).map(function(c){return c.value;});
   r.lockPolicy=g('it_lock').value; r.search=g('it_search').value; r.sku=g('it_sku').value;
@@ -1282,7 +1288,7 @@ function renderShop(){
       const opts=(it.vendor?'':'<option value="" selected>Select supplier…</option>')+VENDORS.map(function(v){return '<option'+(v===it.vendor?' selected':'')+'>'+v+'</option>';}).join('');
       const vsel='<select onchange="setVendor('+i+',this.value)" style="font-size:12px;border:1px solid #e2e8f0;border-radius:6px;padding:2px 4px">'+opts+'</select>';
       let pb='';
-      if(it.price==='ok')pb=' <span class="badge bg-emerald-100 text-emerald-700">ok</span>';
+      if(it.price==='ok')pb=' <span class="badge bg-emerald-100 text-emerald-700" title="Price-checked — the current supplier is the best match found; nothing cheaper to switch to">best price</span>';
       else if(it.price==='cheaper')pb=' <button class="badge bg-sky-100 text-sky-700" style="border:none;cursor:pointer" onclick="toggleRow('+i+')">compare ▾</button>';
       else if(it.price==='inbound')pb=' <button class="btn" style="padding:2px 8px" onclick="skipCycle('+i+')">Skip cycle</button>';
       else if(it.price==='pending')pb=' <span class="badge bg-slate-100 text-slate-500">price-check</span>';
