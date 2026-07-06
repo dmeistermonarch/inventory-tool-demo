@@ -40,13 +40,13 @@
       <a class="nav-item active" data-s="dash"><span>📊</span> Dashboard</a>
       <a class="nav-item" data-s="shop"><span>🛒</span> Shopping list</a>
       <a class="nav-item" data-s="recv"><span>📦</span> Receiving</a>
-      <a class="nav-item" data-s="orders"><span>🧾</span> Orders</a>
+      <a class="nav-item" data-s="orders"><span>🧾</span> Order History</a>
       <a class="nav-item" data-s="counts"><span>📋</span> Inventory</a>
       <a class="nav-item" data-s="cat"><span>📚</span> Catalog &amp; pars</a>
       <a class="nav-item" data-s="admin"><span>⚙️</span> Admin</a>
     </nav>
     <div class="px-4 py-3 text-white/60 text-xs border-t border-white/10">Danny Meister · Purchaser</div>
-    <div class="px-4 pb-3 text-white/40 text-[10px] leading-tight" title="Deploy version — if this doesn't match the latest deploy, you're seeing a cached page (hard-refresh: Ctrl+Shift+R)">build <span id="buildStamp"><!--BUILD-->20260702-160521 (ce8774c)<!--/BUILD--></span></div>
+    <div class="px-4 pb-3 text-white/40 text-[10px] leading-tight" title="Deploy version — if this doesn't match the latest deploy, you're seeing a cached page (hard-refresh: Ctrl+Shift+R)">build <span id="buildStamp"><!--BUILD-->20260706-113534 (f0ce2f1)<!--/BUILD--></span></div>
   </aside>
 
   <div class="flex-1 flex flex-col min-w-0">
@@ -69,22 +69,32 @@
         </div>
 
         <div class="bg-white border border-slate-200 rounded-xl p-5 mb-4">
-          <div class="text-sm font-semibold mb-1">Needs attention</div>
-          <div class="flex items-center gap-3 py-3 border-t border-slate-100"><span>⚠️</span><div class="flex-1"><div class="text-sm">Order O-1042 · Costco · Main Warehouse</div><div class="text-xs text-slate-500">5 days past expected delivery</div></div><span class="badge bg-red-100 text-red-700">Stale</span><button class="btn" onclick="go('orders');showOrder('O-1042')">Override</button></div>
-          <div class="flex items-center gap-3 py-3 border-t border-slate-100"><span>📦</span><div class="flex-1"><div class="text-sm">Order O-1039 · Sam's Club · Main Warehouse</div><div class="text-xs text-slate-500">4 of 6 lines received</div></div><span class="badge bg-amber-100 text-amber-700">Partial</span><button class="btn" onclick="go('recv')">Receive</button></div>
-          <div class="flex items-center gap-3 py-3 border-t border-slate-100"><span>🔎</span><div class="flex-1"><div class="text-sm">K-Cups — Donut Shop 72ct</div><div class="text-xs text-slate-500">Price-check match looks unreliable</div></div><span class="badge bg-sky-100 text-sky-700">Review</span><button class="btn" onclick="go('cat')" title="fix the search term / pin the SKU in Catalog">Fix</button></div>
-          <div class="flex items-center gap-3 py-3 border-t border-slate-100"><span>🕓</span><div class="flex-1"><div class="text-sm">MPS Storage · 6 par levels not reviewed in 6+ months</div></div><button class="btn" onclick="go('cat');if(!parEdit)toggleParEdit()">Review pars</button></div>
+          <div class="flex items-center gap-2 mb-3 flex-wrap">
+            <div class="text-sm font-semibold">Needs attention</div>
+            <div class="flex-1"></div>
+            <div class="flex flex-wrap gap-1.5 justify-end text-xs">
+              <button class="px-2 py-1 rounded-full bg-red-50 text-red-700 hover:bg-red-100" onclick="go('recv')">3 stale</button>
+              <button class="px-2 py-1 rounded-full bg-amber-50 text-amber-700 hover:bg-amber-100" onclick="go('recv')">2 short deliveries</button>
+              <button class="px-2 py-1 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200" onclick="go('shop')">18 low stock</button>
+              <button class="px-2 py-1 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200" onclick="go('cat')">1 needs review</button>
+              <button class="px-2 py-1 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200" onclick="go('cat')">6 pars to review</button>
+            </div>
+          </div>
+          <div class="text-[11px] text-slate-400 mb-1">Top priorities below — the chips are the full digest, one tap to each list.</div>
+          <div class="flex items-center gap-3 py-2.5 border-t border-slate-100"><span>⚠️</span><div class="flex-1"><div class="text-sm">Order O-1042 · Costco · Kahana</div><div class="text-xs text-slate-500">5 days past expected delivery</div></div><span class="badge bg-red-100 text-red-700">Stale</span><button class="btn" onclick="go('recv')">Review</button></div>
+          <div class="flex items-center gap-3 py-2.5 border-t border-slate-100"><span>📦</span><div class="flex-1"><div class="text-sm">Order O-1039 · Sam's Club · Kihei</div><div class="text-xs text-slate-500">4 of 6 lines received — balance still open</div></div><span class="badge bg-amber-100 text-amber-700">Partial</span><button class="btn" onclick="go('recv')">Receive</button></div>
+          <button class="text-xs text-slate-500 hover:text-slate-700 mt-2" onclick="go('recv')">+3 more in Receiving →</button>
         </div>
 
         <details class="bg-white border border-slate-200 rounded-xl p-5 mb-4">
           <summary class="text-sm font-semibold cursor-pointer">Cost adjustments needed in Breezeway <span class="text-xs font-normal text-slate-400">(2)</span></summary>
-          <div class="flex items-center gap-3 py-3 mt-2 border-t border-slate-100"><span>💲</span><div class="flex-1"><div class="text-sm">Dish Soap — Dawn Ultra 56oz</div><div class="text-xs text-slate-500">Paid $13.20 · Breezeway cost $11.90 — update so markup captures</div></div><button class="btn" onclick="mockNote('Opens this task in Breezeway — the write-back integration is Phase 3 (API capability spike pending).')">Open in Breezeway</button></div>
-          <div class="flex items-center gap-3 py-3 border-t border-slate-100"><span>💲</span><div class="flex-1"><div class="text-sm">Trash Bags — Glad 13gal 200ct</div><div class="text-xs text-slate-500">Paid $26.40 · Breezeway cost $24.98</div></div><button class="btn" onclick="mockNote('Opens this task in Breezeway — the write-back integration is Phase 3 (API capability spike pending).')">Open in Breezeway</button></div>
+          <div class="flex items-center gap-3 py-3 mt-2 border-t border-slate-100"><span>💲</span><div class="flex-1"><div class="text-sm">Dish Soap — Dawn Ultra 56oz</div><div class="text-xs text-slate-500">Paid $13.20 · Breezeway cost $11.90 — update so markup captures</div></div><button class="btn" onclick="openBreezeway('https://app.breezeway.io/supplies?flyout=supply_form&amp;supplyId=96280')" title="Opens Breezeway to update this supply's cost — cost is read-only in the tool, so the fix is made in BW">Open in Breezeway</button></div>
+          <div class="flex items-center gap-3 py-3 border-t border-slate-100"><span>💲</span><div class="flex-1"><div class="text-sm">Trash Bags — Glad 13gal 200ct</div><div class="text-xs text-slate-500">Paid $26.40 · Breezeway cost $24.98</div></div><button class="btn" onclick="openBreezeway('https://app.breezeway.io/supplies?flyout=supply_form&amp;supplyId=55867')" title="Opens Breezeway to update this supply's cost — cost is read-only in the tool, so the fix is made in BW">Open in Breezeway</button></div>
         </details>
 
         <details class="bg-white border border-slate-200 rounded-xl p-5">
           <summary class="text-sm font-semibold cursor-pointer">Supply risk <span class="text-xs font-normal text-slate-400">(1)</span></summary>
-          <div class="flex items-center gap-3 py-3 mt-2 border-t border-slate-100"><span>🚚</span><div class="flex-1"><div class="text-sm">A1A — bath towels</div><div class="text-xs text-slate-500">~3 weeks behind usual lead time · consider fallback vendor</div></div><span class="badge bg-amber-100 text-amber-700">Behind</span></div>
+          <div class="flex items-center gap-3 py-3 mt-2 border-t border-slate-100"><span>🚚</span><div class="flex-1"><div class="text-sm">A1 White — bath towels · Kihei</div><div class="text-xs text-slate-500">Last 5 orders averaging ~8 days vs your 3-day expectation — may stock out before the next delivery lands</div></div><span class="badge bg-amber-100 text-amber-700">Trending slow</span></div>
         </details>
       </section>
 
@@ -102,26 +112,28 @@
         <div class="text-[11px] text-slate-400 mt-2">Change an item's vendor (or pick one in its price compare) to move it into that supplier's section. Each supplier section has a select-all for bulk actions — price-check or create the order for that vendor. On-order is shown beside on-hand so you can skip what's already inbound.</div>
       </section>
 
-      <section id="recv" class="screen max-w-[720px]">
+      <section id="recv" class="screen max-w-[1100px]">
+        <div class="text-sm text-slate-500 mb-4">Orders to receive — everything still in flight. Confirm what arrived (partial or full); fully-received and closed orders move to <button class="text-slate-700 underline hover:text-slate-900" onclick="go('orders')">Order History</button>.</div>
         <div id="recvCard"></div>
       </section>
 
       <section id="orders" class="screen max-w-[1100px]">
         <div id="ordersList">
+          <div class="text-sm text-slate-500 mb-3">Completed &amp; closed orders — kept for reference if questions come up. Orders still in flight (open, awaiting, partial, stale) live on the <button class="text-slate-700 underline hover:text-slate-900" onclick="go('recv')">Receiving</button> page.</div>
           <div class="flex flex-wrap items-center gap-2 mb-3">
             <input placeholder="Search item, order #, vendor, PO…" disabled title="Search/filter is spec'd (API GET /orders ?q); inert in this prototype." class="flex-1 min-w-[200px] text-sm border border-slate-200 rounded-md px-3 py-1.5 bg-slate-50" style="opacity:.55;cursor:not-allowed">
             <select class="text-sm border border-slate-200 rounded-md px-2 py-1.5 bg-white"><option>Ordered date</option><option>Received date</option></select>
             <input type="date" class="text-sm border border-slate-200 rounded-md px-2 py-1.5 bg-white"><span class="text-slate-400 text-sm">–</span><input type="date" class="text-sm border border-slate-200 rounded-md px-2 py-1.5 bg-white">
-            <select class="text-sm border border-slate-200 rounded-md px-2 py-1.5 bg-white"><option>All statuses</option><option>Open</option><option>Submitted</option><option>Partial</option><option>Received</option><option>Stale</option></select>
+            <select class="text-sm border border-slate-200 rounded-md px-2 py-1.5 bg-white"><option>All completed</option><option>Received</option><option>Closed</option><option>Canceled</option></select>
           </div>
-          <div class="bg-white border border-slate-200 rounded-xl overflow-hidden">
+          <div class="bg-white border border-slate-200 rounded-xl" style="overflow-x:auto">
             <table class="dense w-full">
-              <thead><tr><th>Order</th><th>Vendor</th><th>Location</th><th>Ordered</th><th class="num">Lines</th><th class="num">Total</th><th>Status</th><th></th></tr></thead>
+              <thead><tr><th>Order</th><th>Vendor</th><th>Location</th><th>Ordered</th><th>Closed</th><th class="num">Lines</th><th class="num">Total</th><th>Status</th><th></th></tr></thead>
               <tbody>
-                <tr><td class="font-medium">O-1042</td><td>Costco</td><td>Main Warehouse</td><td>6/15</td><td class="num">2</td><td class="num">$219.86</td><td><span class="badge bg-red-100 text-red-700">Stale</span></td><td><button class="btn" onclick="showOrder('O-1042')">View</button></td></tr>
-                <tr><td class="font-medium">O-1040</td><td>Amazon</td><td>Eden Lodge A</td><td>6/27</td><td class="num">3</td><td class="num">$182.43</td><td><span class="badge bg-blue-100 text-blue-700">Submitted</span></td><td><button class="btn" onclick="showOrder('O-1040')">View</button></td></tr>
-                <tr><td class="font-medium">O-1039</td><td>Sam's Club</td><td>Main Warehouse</td><td>6/18</td><td class="num">3</td><td class="num">$201.40</td><td><span class="badge bg-amber-100 text-amber-700">Partial</span></td><td><button class="btn" onclick="showOrder('O-1039')">View</button></td></tr>
-                <tr><td class="font-medium">O-1036</td><td>Amazon</td><td>Cabin 1</td><td>6/12</td><td class="num">2</td><td class="num">$80.45</td><td><span class="badge bg-emerald-100 text-emerald-700">Received</span></td><td><button class="btn" onclick="showOrder('O-1036')">View</button></td></tr>
+                <tr><td class="font-medium">O-1036</td><td>Amazon</td><td>Kahana</td><td>6/12</td><td>6/19</td><td class="num">2</td><td class="num">$80.45</td><td><span class="badge bg-emerald-100 text-emerald-700">Received</span></td><td><button class="btn" onclick="showOrder('O-1036')">View</button></td></tr>
+                <tr><td class="font-medium">O-1031</td><td>Costco</td><td>Kihei</td><td>6/5</td><td>6/9</td><td class="num">3</td><td class="num">$146.72</td><td><span class="badge bg-emerald-100 text-emerald-700">Received</span></td><td><button class="btn" onclick="showOrder('O-1031')">View</button></td></tr>
+                <tr><td class="font-medium">O-1028</td><td>Sam's Club</td><td>Kahana</td><td>5/28</td><td>6/6</td><td class="num">2</td><td class="num">$63.20</td><td><span class="badge bg-slate-200 text-slate-600">Closed</span></td><td><button class="btn" onclick="showOrder('O-1028')">View</button></td></tr>
+                <tr><td class="font-medium">O-1024</td><td>HD Supply</td><td>Kihei</td><td>5/20</td><td>5/30</td><td class="num">1</td><td class="num">$212.00</td><td><span class="badge bg-emerald-100 text-emerald-700">Received</span></td><td><button class="btn" onclick="showOrder('O-1024')">View</button></td></tr>
               </tbody>
             </table>
           </div>
@@ -146,26 +158,26 @@
         <div class="text-[11px] text-slate-400 mt-2" id="parNote"><b>Quick edit</b> unlocks par/reorder (for the selected location) plus search term &amp; preferred vendor (which apply to <b>all</b> locations) right in the table. <b>Edit</b> on a row opens the full item detail. Item settings are shared across locations; only par &amp; reorder differ per location.</div>
       </section>
 
-      <section id="admin" class="screen max-w-[1100px]">
-        <div class="grid grid-cols-2 gap-4 items-start">
+      <section id="admin" class="screen max-w-[1320px]">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
 
           <div class="bg-white border border-slate-200 rounded-xl p-5">
             <div class="flex items-center mb-3"><div class="flex-1"><div class="font-semibold text-slate-800">Locations</div><div class="text-xs text-slate-500">Warehouses &amp; storage for this brand. New locations copy par targets from a template location; on-hand starts at 0. Site admins add + deactivate; <b>full removal is Monarch Admin only</b>.</div></div><button class="btn btn-brand brand-bg" onclick="openAddLoc()">＋ Add location</button></div>
-            <div id="admLocTable"></div>
+            <div id="admLocTable" style="overflow-x:auto"></div>
           </div>
 
           <div class="bg-white border border-slate-200 rounded-xl p-5">
             <div class="flex items-center mb-3"><div class="flex-1"><div class="font-semibold text-slate-800">Suppliers</div><div class="text-xs text-slate-500"><b>Master list is Monarch-managed</b> (add/remove = Monarch Admin only). Site teams don't add suppliers — they <b>activate</b> the ones they buy from and set <b>their own</b> lead times (Amazon ≈ 2 wks to Hawaii). A1 can sit on the list while a site simply leaves it inactive. Lead times drive expected delivery + the stale flag.</div></div><button class="btn" onclick="addVendor()" title="Monarch Admin only">＋ Add supplier</button></div>
-            <div id="admVendorTable"></div>
+            <div id="admVendorTable" style="overflow-x:auto"></div>
           </div>
 
-          <div class="bg-white border border-slate-200 rounded-xl p-5">
+          <div class="bg-white border border-slate-200 rounded-xl p-5 lg:col-span-2">
             <div class="flex items-center mb-3"><div class="flex-1"><div class="font-semibold text-slate-800">Users &amp; access</div><div class="text-xs text-slate-500">One role per user per brand; roles nest — <b>Field/HK ⊂ Receiver ⊂ Purchaser ⊂ Site Admin ⊂ Monarch Admin</b> (+ read-only FP&amp;A Viewer). Purchaser includes receiving and owns catalog/locks; Site Admin adds people &amp; locations for their brands; Monarch Admin is platform-wide. Google SSO for Monarch staff; external-email supported (Eden Crest). Enforcement lands with Stoic IdP.</div></div><button class="btn btn-brand brand-bg" onclick="openUser(-1)">＋ Add user</button></div>
             <div class="text-[11px] text-slate-400 mb-2">Viewing as <b>Monarch Admin</b> — all users, all brands. A Site Admin opens this same page and sees only users with access to their brands (and only those access rows).</div>
-            <div id="admUserTable"></div>
+            <div id="admUserTable" style="overflow-x:auto"></div>
           </div>
 
-          <div class="bg-white border border-slate-200 rounded-xl p-5">
+          <div class="bg-white border border-slate-200 rounded-xl p-5 lg:col-span-2">
             <div class="flex items-center mb-3"><div class="flex-1"><div class="font-semibold text-slate-800">Brands</div><div class="text-xs text-slate-500">Each brand gets its own catalog, locations, and theming. Use the switcher (top right) to change context. Adding brands is Monarch Admin only.</div></div><button class="btn" onclick="openAddBrand()">＋ Add brand</button></div>
             <div id="admBrandTable" style="max-height:420px;overflow:auto"></div>
           </div>
@@ -937,7 +949,7 @@ sw.addEventListener('change',function(){applyBrand(this.value)});
 function go(s){
   document.querySelectorAll('.nav-item').forEach(function(n){n.classList.toggle('active',n.dataset.s===s)});
   document.querySelectorAll('.screen').forEach(function(x){x.classList.toggle('active',x.id===s)});
-  const titles={dash:'Dashboard',shop:'Shopping list',orders:'Orders',recv:'Receiving',counts:'Inventory',cat:'Catalog & pars',admin:'Admin'};
+  const titles={dash:'Dashboard',shop:'Shopping list',orders:'Order History',recv:'Receiving',counts:'Inventory',cat:'Catalog & pars',admin:'Admin'};
   document.getElementById('pageTitle').textContent=titles[s]||'';
   if(s==='orders'){document.getElementById('ordersList').style.display='';document.getElementById('orderDetail').style.display='none';}
 }
@@ -949,6 +961,12 @@ function toggleCompare(btn){
 
 // Toast for deliberate integration mocks (Breezeway/CSV/QR/refresh) — a click
 // should always answer, even when the real behavior lives in a later phase.
+// Deep-link to Breezeway to fix a supply's cost (cost is read-only in the tool).
+// Pass the supply's BW URL to jump straight to it; in the real tool the URL is
+// built from a template + catalog_items.breezeway_supply_id. Falls back to the
+// BW home page until the per-supply URL pattern is confirmed.
+function openBreezeway(url){window.open(url||'https://app.breezeway.io/','_blank','noopener');}
+
 function mockNote(msg){
   var t=document.getElementById('mockToast');
   if(!t){t=document.createElement('div');t.id='mockToast';t.style.cssText='position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;z-index:99;max-width:540px;box-shadow:0 6px 24px rgba(0,0,0,.25)';document.body.appendChild(t);}
@@ -1005,29 +1023,29 @@ function addCatalogItem(){
 }
 
 const ORDERS={
- 'O-1042':{vendor:'Costco',loc:'Main Warehouse',date:'6/15',po:'PO-2026-0142',status:'<span class="badge bg-red-100 text-red-700">Stale</span>',
-   lines:[['Toilet Paper — Charmin',6,21.99],['Paper Towels — Bounty',4,24.49]],
-   audit:['6/15 · Danny — created from shopping list','6/15 · Danny — PO assigned PO-2026-0142','6/20 · system — ⚠ stale flag raised (5 days past expected)'],
-   actions:'<button class="btn" onclick="ordOverride(\'O-1042\')">Override stale</button> <button class="btn" onclick="ordMarkReceived(\'O-1042\')">Mark received</button>'},
- 'O-1040':{vendor:'Amazon',loc:'Eden Lodge A',date:'6/27',po:'PO-EC-0218',status:'<span class="badge bg-blue-100 text-blue-700">Submitted</span>',
-   lines:[['K-Cups — Donut Shop',3,38.99],['Batteries — AA 24pk',2,17.99],['Dish Soap — Dawn',4,12.49]],
-   audit:['6/27 · Danny — created','6/27 · Danny — PO assigned PO-EC-0218'],
-   actions:'<button class="btn" onclick="ordMarkReceived(\'O-1040\')">Mark received</button>'},
- 'O-1039':{vendor:"Sam's Club",loc:'Main Warehouse',date:'6/18',po:'PO-2026-0140',status:'<span class="badge bg-amber-100 text-amber-700">Partial</span>',
-   lines:[['Laundry Pods — Tide',4,19.98],['Trash Bags — Glad 13gal',6,24.98],['Paper Towels — Bulk Roll',4,28.49]],
-   audit:['6/18 · Danny — created','6/23 · Receiver — partial: 4/4 pods, 4/6 trash bags, 0/4 paper towels'],
-   actions:'<button class="btn btn-brand brand-bg" onclick="go(\'recv\')" title="the wired receiving flow lives on the Receiving screen">Receive shipment</button> <button class="btn" onclick="ordCancelRemaining(\'O-1039\')">Cancel remaining items</button>'},
- 'O-1036':{vendor:'Amazon',loc:'Cabin 1',date:'6/12',po:'PO-2026-0139',status:'<span class="badge bg-emerald-100 text-emerald-700">Received</span>',
+ 'O-1036':{vendor:'Amazon',loc:'Kahana',date:'6/12',po:'PO-2026-0139',status:'<span class="badge bg-emerald-100 text-emerald-700">Received</span>',
    lines:[['Sponges — Scotch-Brite',2,14.49],['Batteries — AA 24pk',3,16.99]],
    audit:['6/12 · Danny — created','6/19 · Receiver — full receive, closed (saved $3.00 on batteries)'],
-   actions:'<button class="btn" onclick="ordReopen(\'O-1036\')">Reopen</button>'}
+   actions:'<button class="btn" onclick="ordReopen(\'O-1036\')">Reopen</button>'},
+ 'O-1031':{vendor:'Costco',loc:'Kihei',date:'6/5',po:'PO-2026-0131',status:'<span class="badge bg-emerald-100 text-emerald-700">Received</span>',
+   lines:[['Toilet Paper — Charmin',3,21.99],['Paper Towels — Bounty',2,24.49],['Dish Soap — Dawn 56oz',3,10.92]],
+   audit:['6/5 · Danny — created from shopping list','6/9 · Receiver — full receive, closed'],
+   actions:'<button class="btn" onclick="ordReopen(\'O-1031\')">Reopen</button>'},
+ 'O-1028':{vendor:"Sam's Club",loc:'Kahana',date:'5/28',po:'PO-2026-0128',status:'<span class="badge bg-slate-200 text-slate-600">Closed</span>',
+   lines:[['Laundry Pods — Tide',2,19.98],['Trash Bags — Glad 13gal',1,23.24]],
+   audit:['5/28 · Danny — created','6/2 · Receiver — 2/2 pods received','6/6 · Receiver — remaining trash bags canceled (backorder_abandoned)'],
+   actions:'<button class="btn" onclick="ordReopen(\'O-1028\')">Reopen</button>'},
+ 'O-1024':{vendor:'HD Supply',loc:'Kihei',date:'5/20',po:'PO-MPS-0401',status:'<span class="badge bg-emerald-100 text-emerald-700">Received</span>',
+   lines:[['Shampoo — Hotel Mini 1oz 144ct',1,212.00]],
+   audit:['5/20 · Danny — created','5/30 · Receiver — full receive, closed'],
+   actions:'<button class="btn" onclick="ordReopen(\'O-1024\')">Reopen</button>'}
 };
 function showOrder(id){
   const o=ORDERS[id]; let tot=0;
   const rows=o.lines.map(function(l){tot+=l[1]*l[2];return '<tr><td>'+l[0]+'</td><td class="num">'+l[1]+'</td><td class="num">$'+l[2].toFixed(2)+'</td><td class="num">$'+(l[1]*l[2]).toFixed(2)+'</td></tr>';}).join('');
   const aud=o.audit.map(function(a){return '<div style="font-size:12px;color:#64748b;padding:3px 0">'+a+'</div>';}).join('');
   document.getElementById('orderDetail').innerHTML=
-    '<button class="btn mb-3" onclick="backToOrders()">← All orders</button>'+
+    '<button class="btn mb-3" onclick="backToOrders()">← Order history</button>'+
     '<div class="bg-white border border-slate-200 rounded-xl p-5">'+
     '<div class="flex items-center gap-2 mb-1"><div class="font-semibold text-lg">'+id+'</div>'+o.status+'</div>'+
     '<div class="text-xs text-slate-500 mb-4">'+o.vendor+' · '+o.loc+' · '+o.po+' · ordered '+o.date+'</div>'+
@@ -1135,7 +1153,7 @@ function openCount(item){var lc=document.getElementById('invLoc');if(lc)document
 function closeCount(){document.getElementById('countModal').style.display='none';}
 
 let RECV=[
- {id:'O-1042',vendor:'Costco',loc:'Kahana',po:'PO-2026-0142',date:'6/15',closed:false,
+ {id:'O-1042',vendor:'Costco',loc:'Kahana',po:'PO-2026-0142',date:'6/15',closed:false,overdue:'5 days past expected delivery',
    lines:[{item:'Toilet Paper — Charmin Ultra Soft',ordered:6,received:0},{item:'Paper Towels — Bounty',ordered:4,received:0}]},
  {id:'O-1039',vendor:"Sam's Club",loc:'Kihei',po:'PO-2026-0140',date:'6/18',closed:false,
    lines:[{item:'Laundry Pods — Tide',ordered:4,received:4},{item:'Trash Bags — Glad 13gal',ordered:6,received:4},{item:'Paper Towels — Bulk Roll',ordered:4,received:0}]},
@@ -1145,15 +1163,15 @@ let RECV=[
    lines:[{item:'Shampoo — Hotel Mini 1oz 144ct',ordered:144,received:100}]}
 ];
 function renderRecv(){
-  document.getElementById('recvCard').innerHTML=RECV.map(function(o,oi){
+  document.getElementById('recvCard').innerHTML='<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">'+RECV.map(function(o,oi){
     var allDone=o.lines.every(function(l){return l.received>=l.ordered;}), any=o.lines.some(function(l){return l.received>0;});
-    var status=o.closed?'<span class="badge bg-slate-200 text-slate-600">Closed — '+((o.closeReason||'canceled_by_vendor').replace(/_/g,' '))+'</span>':(o.reopened?'<span class="badge bg-sky-100 text-sky-700">Reopened</span>':(allDone?'<span class="badge bg-emerald-100 text-emerald-700">Received</span>':(any?'<span class="badge bg-amber-100 text-amber-700">Partial</span>':'<span class="badge bg-blue-100 text-blue-700">Awaiting delivery</span>')));
+    var status=o.closed?'<span class="badge bg-slate-200 text-slate-600">Closed — '+((o.closeReason||'canceled_by_vendor').replace(/_/g,' '))+'</span>':(o.reopened?'<span class="badge bg-sky-100 text-sky-700">Reopened</span>':(allDone?'<span class="badge bg-emerald-100 text-emerald-700">Received</span>':(any?'<span class="badge bg-amber-100 text-amber-700">Partial</span>':(o.overdue?'<span class="badge bg-red-100 text-red-700">Stale</span>':'<span class="badge bg-blue-100 text-blue-700">Awaiting delivery</span>'))));
     var rows=o.lines.map(function(l,li){
       var rem=l.ordered-l.received;
       if(o.reopened) return '<div class="flex justify-between items-center text-sm py-2 border-t border-slate-100"><div><div>'+l.item+'</div><div class="text-[11px] text-slate-400">correct received qty — logged</div></div><div class="flex items-center gap-2"><input id="c_'+oi+'_'+li+'" type="number" min="0" value="'+l.received+'" onchange="recvCorrect('+oi+','+li+',this.value)" style="width:54px;text-align:right;border:1px solid #e2e8f0;border-radius:6px;padding:3px 5px"><span class="text-[11px] text-slate-400">of '+l.ordered+'</span></div></div>';
       if(rem<=0) return '<div class="flex justify-between items-center text-sm py-2 border-t border-slate-100"><span>'+l.item+' <span class="badge bg-emerald-100 text-emerald-700">received</span></span><span class="text-slate-500">'+l.received+' of '+l.ordered+'</span></div>';
       if(o.closed) return '<div class="flex justify-between items-center text-sm py-2 border-t border-slate-100"><span>'+l.item+' <span class="badge bg-slate-200 text-slate-600">'+rem+' canceled</span></span><span class="text-slate-500">'+l.received+' of '+l.ordered+'</span></div>';
-      return '<div class="flex justify-between items-center text-sm py-2 border-t border-slate-100"><div><div>'+l.item+'</div><div class="text-[11px] text-slate-400">'+l.received+' of '+l.ordered+' received · '+rem+' remaining</div></div><div class="flex items-center gap-2"><span class="text-[11px] text-slate-400">receiving now</span><input id="r_in_'+oi+'_'+li+'" type="number" min="0" max="'+rem+'" value="'+rem+'" style="width:54px;text-align:right;border:1px solid #e2e8f0;border-radius:6px;padding:3px 5px"></div></div>';
+      return '<div class="flex justify-between items-center gap-3 py-2.5 border-t border-slate-100"><div><div class="text-sm">'+l.item+'</div><div class="text-xs text-slate-600 mt-0.5"><span class="font-semibold text-slate-800">'+l.received+'</span> of <span class="font-semibold text-slate-800">'+l.ordered+'</span> received · <span class="font-semibold text-slate-700">'+rem+'</span> remaining</div></div><div class="flex items-center gap-1.5 shrink-0"><span class="text-[11px] text-slate-400">receiving now</span><input id="r_in_'+oi+'_'+li+'" type="number" min="0" max="'+rem+'" value="'+rem+'" style="width:54px;text-align:right;border:1px solid #e2e8f0;border-radius:6px;padding:3px 5px"><span class="text-[11px] text-slate-400">of '+rem+' remaining</span></div></div>';
     }).join('');
     var actions;
     if(o.reopened) actions='<div class="text-[11px] text-sky-700 mt-3">Reopened — edit received above to fix a miscount; each change posts a correcting inventory delta and is logged.</div><div class="flex gap-2 mt-2"><button class="btn btn-brand brand-bg" onclick="recvReclose('+oi+')">Done correcting</button></div>';
@@ -1161,8 +1179,10 @@ function renderRecv(){
     else if(allDone) actions='<div class="flex items-center gap-3 mt-3 flex-wrap"><span class="text-[11px] text-emerald-700">All items received — order auto-closed.</span><button class="btn" onclick="recvReopen('+oi+')">Reopen</button></div>';
     else actions='<div class="flex gap-2 mt-4 flex-wrap"><button class="btn btn-brand brand-bg" onclick="recvAll('+oi+')">Receive all remaining</button><button class="btn" onclick="recvConfirm('+oi+')">Confirm what arrived</button><button class="btn" onclick="recvCancel('+oi+')">Cancel remaining items</button></div>';
     var actLog=(o.activity&&o.activity.length)?'<div class="mt-3 pt-2" style="border-top:1px solid #f1f5f9"><div class="text-[11px] text-slate-400 mb-1">Activity</div>'+o.activity.map(function(a){return '<div class="text-[11px] text-slate-500">› '+a+'</div>';}).join('')+'</div>':'';
-    return '<div class="bg-white border border-slate-200 rounded-xl p-5 mb-4"><div class="flex items-center gap-2 mb-1"><div class="font-semibold">Order '+o.id+'</div>'+status+'</div><div class="text-xs text-slate-500 mb-3">'+o.vendor+' · '+o.loc+' · '+o.po+' · ordered '+o.date+'</div>'+rows+actions+actLog+'</div>';
-  }).join('')+'<div class="text-[11px] text-slate-400">Four examples in different states — all on the real <b>applyReceipt</b> logic. Edit "receiving now" + Confirm for a partial; Receive all for full; Cancel remaining to close the balance. A closed/received order can be <b>Reopened</b> (reason required) to correct a miscount via <b>correctReceivedQty</b>.</div>';
+    var warnBanner=o.overdue?'<div class="flex items-center gap-2 mb-2 text-xs text-red-700 bg-red-50 border border-red-200 rounded-md px-2 py-1">⚠ '+o.overdue+'</div>':'';
+    var cardCls=o.overdue?'bg-white border border-red-300 ring-1 ring-red-200 rounded-xl p-5':'bg-white border border-slate-200 rounded-xl p-5';
+    return '<div class="'+cardCls+'">'+warnBanner+'<div class="flex items-center gap-2 mb-1"><div class="font-semibold">Order '+o.id+'</div>'+status+'</div><div class="text-xs text-slate-500 mb-3">'+o.vendor+' · '+o.loc+' · '+o.po+' · ordered '+o.date+'</div>'+rows+actions+actLog+'</div>';
+  }).join('')+'</div>'+'<div class="text-[11px] text-slate-400 mt-3">Every order still in flight — awaiting delivery, partial, or stale — is here until it\'s fully received or closed, then it moves to Order History. Edit "receiving now" + Confirm for a partial; Receive all for full; Cancel remaining to close the balance. A closed/received order can be <b>Reopened</b> (reason required) to correct a miscount.</div>';
 }
 function recvEngLines(o){return o.lines.map(function(l,li){return {id:String(li),item_id:l.item,qty_ordered:l.ordered,unit_cost:(l.cost||0),already_received:l.received};});}
 function recvApply(o,receipt){
